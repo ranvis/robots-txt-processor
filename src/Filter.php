@@ -22,13 +22,6 @@ class Filter
     {
         $this->options = $options + [
             'maxRecords' => 1000,
-            'maxUserAgents' => 1000,
-            'maxNameLength' => 200,
-            'maxLineLength' => 2000,
-            'maxWildcards' => 10,
-            'escapedWildcard' => true,
-            'supportLws' => false,
-            'pathMemberRegEx' => '/^(?i)(?:Dis)?Allow$/',
         ];
     }
 
@@ -57,14 +50,14 @@ class Filter
      */
     public function parse(string $source)
     {
-        $this->availUserAgents = $this->options['maxUserAgents'];
+        $txtParser = new TxtParser($this->options);
         $maxRecords = $this->options['maxRecords'];
         $namedRecords = [];
-        foreach ($this->getTxtIterator($source) as $record) {
+        foreach ($txtParser->getRecordIterator($source) as $record) {
             if (!$maxRecords--) {
                 break;
             }
-            $spec = $this->getRecordSpec($record);
+            $spec = $txtParser->getRecordSpec($record);
             $merge = false;
             if ($spec['nonGroup']) { // merge non-group records
                 // cf. nongroupline of https://developers.google.com/webmasters/control-crawl-index/docs/robots_txt?hl=en
@@ -90,7 +83,8 @@ class Filter
     public function getFilteredSource($userAgents = null)
     {
         $rules = (string)$this->getRules($userAgents);
-        $it = $this->getRuleIterator($rules);
+        $txtParser = new TxtParser($this->options);
+        $it = $txtParser->getRuleIterator($rules);
         $filteredRules = 'User-agent: *';
         foreach ($it as $rule) {
             $line = $rule['key'] . ': ' . $rule['value'];
@@ -100,34 +94,6 @@ class Filter
             $filteredRules .= "\n\n$nonGroupRules";
         }
         return $filteredRules;
-    }
-
-    public function getRuleIterator(string $rules)
-    {
-        $it = $this->getRecordIterator($rules);
-        $pathMemberRegEx = $this->options['pathMemberRegEx'];
-        $maxWildcards = $this->options['maxWildcards'];
-        $escapedWildcard = $this->options['escapedWildcard'];
-        foreach ($it as $line) {
-            if (!preg_match('/\A(?<key>[^:]+?)[ \t]*:[ \t]*(?<value>.*)/', $line, $match)) {
-                continue;
-            }
-            if (preg_match($pathMemberRegEx, $match['key'])) {
-                $path = $match['value'];
-                if ($escapedWildcard) {
-                    $path = preg_replace('/%2a/i', '*', $path);
-                }
-                if (!preg_match('#\A[/*]#', $path)) {
-                    continue;
-                }
-                $path = preg_replace('/\*+/', '*', $path, -1, $count);
-                if ($count > $maxWildcards) {
-                    continue;
-                }
-                $match['value'] = $path;
-            }
-            yield $match;
-        }
     }
 
     /**
@@ -167,65 +133,5 @@ class Filter
     public function getNonGroupRules()
     {
         return $this->getRawRules(self::NON_GROUP_RULES);
-    }
-
-    protected function getTxtIterator(string $source)
-    {
-        if ($this->options['supportLws']) {
-            $source = preg_replace('/\x0d\x0a[ \t]+/s', ' ', $source);
-        }
-        while (strlen($source)) {
-            $records = preg_split('/(?:\x0d\x0a?|\x0a){2,}/s', $source, 2);
-            yield array_shift($records);
-            $source = $records ? array_shift($records) : '';
-        }
-    }
-
-    protected function getRecordSpec(string $record)
-    {
-        $maxNameLength = (int)$this->options['maxNameLength'];
-        $userAgents = [];
-        $uaRegEx = '/\AUser-agent[ \t]*:[ \t]*(.{0,' . $maxNameLength . '})/i';
-        $it = $this->getRecordIterator($record);
-        $isNonGroup = true;
-        foreach ($it as $line) {
-            if (!preg_match($uaRegEx, $line, $match)) {
-                $it->send(true);
-                break;
-            }
-            $isNonGroup = false;
-            if ($this->availUserAgents > 0) {
-                $this->availUserAgents--;
-                $userAgents[strtolower($match[1])] = true;
-            }
-        }
-        $record = $it->getReturn();
-        return [
-            'nonGroup' => $isNonGroup,
-            'userAgents' => array_keys($userAgents),
-            'rules' => $record,
-        ];
-    }
-
-    protected function getRecordIterator(string $record)
-    {
-        $record = rtrim($record, "\x0a\x0d");
-        $maxLineLength = $this->options['maxLineLength'];
-        while (strlen($record)) {
-            $lines = preg_split('/(?:\x0d\x0a?|\x0a)+/s', $record, 2);
-            $line = $lines[0];
-            if (strlen($line) <= $maxLineLength) {
-                $line = preg_replace('/[ \t]*#.*$/s', '', $line); // remove comment
-                $line = ltrim($line, " \t"); // remove leading spaces
-                if (strlen($line)) {
-                    $msg = (yield $line);
-                    if ($msg === true) {
-                        break;
-                    }
-                }
-            }
-            $record = count($lines) > 1 ? $lines[1] : '';
-        }
-        return $record;
     }
 }
