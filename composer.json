@@ -1,0 +1,24 @@
+{
+	"name": "ranvis/robots-txt-processor",
+	"description": "TODO",
+	"keywords": ["robots.txt", "parser", "filter"],
+	"license": "BSD-2-Clause",
+	"homepage": "https://github.com/ranvis/TODO/blob/master/README.md",
+	"support": {
+		"wiki": "https://github.com/ranvis/TODO/issues"
+	},
+	"authors": [
+		{
+			"name": "SATO Kentaro",
+			"email": "kentaro@ranvis.com"
+		}
+	],
+	"require": {
+		"php": ">=7.0.0"
+	},
+	"autoload": {
+		"psr-4": {
+			"Ranvis\\RobotsTxt\\": "src/"
+		}
+	}
+}
