@@ -58,9 +58,12 @@ class Filter
     public function parse(string $source)
     {
         $this->availUserAgents = $this->options['maxUserAgents'];
-        $records = $this->splitSource($source);
+        $maxRecords = $this->options['maxRecords'];
         $namedRecords = [];
-        foreach ($records as $record) {
+        foreach ($this->getTxtIterator($source) as $record) {
+            if (!$maxRecords--) {
+                break;
+            }
             $spec = $this->getRecordSpec($record);
             $merge = false;
             if ($spec['nonGroup']) { // merge non-group records
@@ -158,7 +161,7 @@ class Filter
     public function getRawRules(string $userAgent)
     {
         $userAgent = strtolower($userAgent);
-        return isset($this->records[$userAgent]) ? $this->records[$userAgent] : null;
+        return $this->records[$userAgent] ?? null;
     }
 
     public function getNonGroupRules()
@@ -166,17 +169,16 @@ class Filter
         return $this->getRawRules(self::NON_GROUP_RULES);
     }
 
-    protected function splitSource(string $source)
+    protected function getTxtIterator(string $source)
     {
-        $maxRecords = $this->options['maxRecords'];
         if ($this->options['supportLws']) {
             $source = preg_replace('/\x0d\x0a[ \t]+/s', ' ', $source);
         }
-        $records = preg_split('/(?:\x0d\x0a?|\x0a){2,}/s', $source, $maxRecords ? ($maxRecords + 1) : -1);
-        if ($maxRecords && count($records) > $maxRecords) {
-            array_pop($records);
+        while (strlen($source)) {
+            $records = preg_split('/(?:\x0d\x0a?|\x0a){2,}/s', $source, 2);
+            yield array_shift($records);
+            $source = $records ? array_shift($records) : '';
         }
-        return $records;
     }
 
     protected function getRecordSpec(string $record)
