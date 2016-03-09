@@ -26,20 +26,25 @@ class Filter
     }
 
     /**
-     * Filter records on parse by User-agents
+     * Filter records on parse by User-agents.
+     * Also set default user-agents on getting rules.
      *
-     * @param string|array $userAgents User-agents to keep
+     * @param string|array|false $userAgents User-agents to keep
      * @param bool $fallback True to keep fallback '*' record
      * @return string|null Rules
      */
     public function setUserAgents($userAgents, bool $fallback = true)
     {
+        if ($userAgents === false) {
+            $this->targetUserAgents = null;
+            return;
+        }
         $userAgents = (array)$userAgents;
         if ($fallback) {
             $userAgents[] = '*';
         }
         $this->targetUserAgents = array_flip(array_map(function ($userAgent) {
-            return strtolower($userAgent); // locale dependent; who cares?
+            return $this->normalizeName($userAgent);
         }, $userAgents));
     }
 
@@ -48,43 +53,45 @@ class Filter
      *
      * @param $source robots.txt data
      */
-    public function parse(string $source)
+    public function setSource(string $source)
     {
         $txtParser = new TxtParser($this->options);
         $maxRecords = $this->options['maxRecords'];
-        $namedRecords = [];
+        $this->records = [];
         foreach ($txtParser->getRecordIterator($source) as $record) {
             if (!$maxRecords--) {
                 break;
             }
             $spec = $txtParser->getRecordSpec($record);
-            $merge = false;
-            if ($spec['nonGroup']) { // merge non-group records
-                // cf. nongroupline of https://developers.google.com/webmasters/control-crawl-index/docs/robots_txt?hl=en
-                $userAgent = self::NON_GROUP_RULES;
-                if (isset($namedRecords[$userAgent])) {
-                    $namedRecords[$userAgent] .= "\n";
-                } else {
-                    $namedRecords[$userAgent] = '';
-                }
-                $namedRecords[$userAgent] .= $spec['rules'];
-                continue;
+            $this->addRecord($spec);
+        }
+    }
+
+    public function addRecord(array $spec)
+    {
+        if (!empty($spec['nonGroup'])) { // merge non-group records
+            // cf. nongroupline of https://developers.google.com/webmasters/control-crawl-index/docs/robots_txt?hl=en
+            $userAgent = self::NON_GROUP_RULES;
+            if (isset($this->records[$userAgent])) {
+                $this->records[$userAgent] .= "\n";
+            } else {
+                $this->records[$userAgent] = '';
             }
-            foreach ($spec['userAgents'] as $userAgent) {
-                $rules = $spec['rules'];
-                if (!$this->targetUserAgents || isset($this->targetUserAgents[$userAgent])) {
-                    $namedRecords[$userAgent] = $rules;
-                }
+            $this->records[$userAgent] .= $spec['rules'];
+            return;
+        }
+        foreach ($spec['userAgents'] as $userAgent) {
+            $rules = $spec['rules'];
+            $userAgent = $this->normalizeName($userAgent);
+            if (!$this->targetUserAgents || isset($this->targetUserAgents[$userAgent])) {
+                $this->records[$userAgent] = $rules;
             }
         }
-        $this->records = $namedRecords;
     }
 
     public function getFilteredSource($userAgents = null)
     {
-        $rules = (string)$this->getRules($userAgents);
-        $txtParser = new TxtParser($this->options);
-        $it = $txtParser->getRuleIterator($rules);
+        $it = $this->getFilteredRuleIterator($userAgents);
         $filteredRules = 'User-agent: *';
         foreach ($it as $rule) {
             $line = $rule['key'] . ': ' . $rule['value'];
@@ -96,6 +103,13 @@ class Filter
         return $filteredRules;
     }
 
+    public function getFilteredRuleIterator($userAgents = null)
+    {
+        $rules = (string)$this->getRules($userAgents);
+        $txtParser = new TxtParser($this->options);
+        return $txtParser->getRuleIterator($txtParser->getLineIterator($rules));
+    }
+
     /**
      * Get rules for the first specified User-agents or '*'
      *
@@ -104,11 +118,12 @@ class Filter
      */
     public function getRules($userAgents = null)
     {
-        if ($userAgents === null) {
-            $userAgents = $this->targetUserAgents;
+        if ($userAgents === null && $this->targetUserAgents !== null) {
+            $userAgents = array_keys($this->targetUserAgents);
+        } else {
+            $userAgents = (array)$userAgents;
+            $userAgents[] = '*';
         }
-        $userAgents = (array)$userAgents;
-        $userAgents[] = '*';
         foreach ($userAgents as $userAgent) {
             $rules = $this->getRawRules($userAgent);
             if ($rules !== null) {
@@ -126,12 +141,27 @@ class Filter
      */
     public function getRawRules(string $userAgent)
     {
-        $userAgent = strtolower($userAgent);
+        $userAgent = $this->normalizeName($userAgent);
         return $this->records[$userAgent] ?? null;
     }
 
     public function getNonGroupRules()
     {
         return $this->getRawRules(self::NON_GROUP_RULES);
+;
+    }
+
+    public function getNonGroupRuleIterator()
+    {
+        $rules = (string)$this->getNonGroupRules();
+        $txtParser = new TxtParser($this->options);
+        return $txtParser->getRuleIterator($txtParser->getLineIterator($rules));
+    }
+
+    private function normalizeName($name)
+    {
+        return preg_replace_callback('/[A-Z]+/', function ($match) {
+            return strtolower($match[0]);
+        }, $name);
     }
 }

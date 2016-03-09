@@ -28,16 +28,23 @@ class TxtParser
         ];
         $this->availUserAgents = $this->options['maxUserAgents'];
         $maxNameLength = (int)$this->options['maxNameLength'];
-        $this->userAgentLineRegEx = '/\AUser-agent[ \t]*:[ \t]*(.{0,' . $maxNameLength . '})/i';
+        $this->userAgentLineRegEx = '/\AUser-agent[ \t]*:[ \t]*(.{0,' . $maxNameLength . '})(.*)\z/i';
     }
 
-    public function getRecordIterator(string $source)
+    protected function replaceLws(string $source)
     {
         if ($this->options['supportLws']) {
             $source = preg_replace('/\x0d\x0a[ \t]+/s', ' ', $source);
         }
+        return $source;
+    }
+
+    public function getRecordIterator(string $source)
+    {
+        $source = $this->replaceLws($source);
+        $source = ltrim($source, "\x0a\x0d");
         while (strlen($source)) {
-            $records = preg_split('/(?:\x0d\x0a?|\x0a){2,}/s', $source, 2);
+            $records = preg_split('/(?:\x0d\x0a?+|\x0a){2,}/s', $source, 2); // 2 newlines of any type
             yield array_shift($records);
             $source = $records ? array_shift($records) : '';
         }
@@ -45,6 +52,7 @@ class TxtParser
 
     public function getRecordSpec(string $record)
     {
+        $record = $this->replaceLws($record);
         $userAgents = [];
         $it = $this->getLineIterator($record);
         $isNonGroup = true;
@@ -54,25 +62,28 @@ class TxtParser
                 break;
             }
             $isNonGroup = false;
-            if ($this->availUserAgents > 0) {
+            if ($this->availUserAgents > 0 && !strlen($match[2])) {
                 $this->availUserAgents--;
-                $userAgents[strtolower($match[1])] = true;
+                $userAgents[$match[1]] = true; // not normalized
             }
         }
         $record = $it->getReturn();
         return [
             'nonGroup' => $isNonGroup,
-            'userAgents' => array_keys($userAgents),
+            'userAgents' => array_map(function ($value) {
+                return (string)$value;
+            }, array_keys($userAgents)),
             'rules' => $record,
         ];
     }
 
     public function getLineIterator(string $record)
     {
+        $record = $this->replaceLws($record);
         $record = rtrim($record, "\x0a\x0d");
         $maxLineLength = $this->options['maxLineLength'];
         while (strlen($record)) {
-            $lines = preg_split('/(?:\x0d\x0a?|\x0a)+/s', $record, 2);
+            $lines = preg_split('/[\x0a\x0d]+/s', $record, 2);
             $line = $lines[0];
             if (strlen($line) <= $maxLineLength) {
                 $line = preg_replace('/[ \t]*#.*$/s', '', $line); // remove comment
@@ -89,13 +100,12 @@ class TxtParser
         return $record;
     }
 
-    public function getRuleIterator(string $rules)
+    public function getRuleIterator($lines)
     {
-        $it = $this->getLineIterator($rules);
         $pathMemberRegEx = $this->options['pathMemberRegEx'];
         $maxWildcards = $this->options['maxWildcards'];
         $escapedWildcard = $this->options['escapedWildcard'];
-        foreach ($it as $line) {
+        foreach ($lines as $line) {
             if (!preg_match('/\A(?<key>[^:]+?)[ \t]*:[ \t]*(?<value>.*)/', $line, $match)) {
                 continue;
             }
@@ -104,7 +114,7 @@ class TxtParser
                 if ($escapedWildcard) {
                     $path = preg_replace('/%2a/i', '*', $path);
                 }
-                if (!preg_match('#\A[/*]#', $path)) {
+                if (strlen($path) && !preg_match('#\A[/*]#', $path)) {
                     continue;
                 }
                 $path = preg_replace('/\*+/', '*', $path, -1, $count);
