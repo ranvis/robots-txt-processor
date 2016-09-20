@@ -4,7 +4,7 @@
  * @license BSD 2-Clause License
  */
 
-use \Ranvis\RobotsTxt\Filter;
+use Ranvis\RobotsTxt\Filter;
 
 class FilterTest extends PHPUnit_Framework_TestCase
 {

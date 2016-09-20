@@ -211,13 +211,12 @@ class TxtParserTest extends PHPUnit_Framework_TestCase
     public function testOptionSupportLws()
     {
         $parser = new TxtParser(['supportLws' => false]);
-        $expected = $source = "User-agent\n \t: \t\n \ta\nDisallow \t : /";
+        $expected = $source = "User-agent\n \t:\n \ta\nDisallow \t : /";
         $it = $parser->getLineIterator($source);
-        $this->assertSame("User-agent\n: \t\na\nDisallow \t : /", implode("\n", iterator_to_array($it)));
+        $this->assertSame("User-agent\n:\na\nDisallow \t : /", implode("\n", iterator_to_array($it)));
         $parser = new TxtParser(['supportLws' => true]);
-        $source = str_replace("\n", "\x0d\x0a", $source);
         $it = $parser->getLineIterator($source);
-        $expected = "User-agent : \t a\nDisallow \t : /";
+        $expected = "User-agent: a\nDisallow: /";
         $this->assertSame($expected, implode("\n", iterator_to_array($it)));
     }
 }

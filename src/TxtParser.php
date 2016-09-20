@@ -22,7 +22,7 @@ class TxtParser
             'maxNameLength' => 200,
             'maxLineLength' => 2000,
             'maxWildcards' => 10,
-            'escapedWildcard' => true,
+            'escapedWildcard' => true, // set true for safety if tester treats '%2A' as a wildcard '*'
             'supportLws' => false,
             'pathMemberRegEx' => '/^(?i)(?:Dis)?Allow$/',
         ];
@@ -34,7 +34,9 @@ class TxtParser
     protected function replaceLws(string $source)
     {
         if ($this->options['supportLws']) {
-            $source = preg_replace('/\x0d\x0a[ \t]+/s', ' ', $source);
+            $lws = '(?:(?:\x0d\x0a?|\x0a)[ \t]+|[ \t]*)'; // *(LWS-ish | WSP)
+            $maxLen = $this->options['maxLineLength'];
+            $source = preg_replace("/^[ \\t]*([A-Za-z-]{1,$maxLen})$lws:$lws(?=[^ \t#]|$)/m", '\1: ', $source);
         }
         return $source;
     }
@@ -88,6 +90,7 @@ class TxtParser
             if (strlen($line) <= $maxLineLength) {
                 $line = preg_replace('/[ \t]*#.*$/s', '', $line); // remove comment
                 $line = ltrim($line, " \t"); // remove leading spaces
+                // trailing spaces are significant if no comment
                 if (strlen($line)) {
                     $msg = (yield $line);
                     if ($msg === true) {

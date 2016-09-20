@@ -29,7 +29,7 @@ class Filter
      * Filter records on parse by User-agents.
      * Also set default user-agents on getting rules.
      *
-     * @param string|array|false $userAgents User-agents to keep
+     * @param string|array|false $userAgents User-agents to keep, false to reset and keep all
      * @param bool $fallback True to keep fallback '*' record
      * @return string|null Rules
      */
@@ -46,6 +46,7 @@ class Filter
         $this->targetUserAgents = array_flip(array_map(function ($userAgent) {
             return $this->normalizeName($userAgent);
         }, $userAgents));
+        $this->records = null; // reset
     }
 
     /**
@@ -148,7 +149,6 @@ class Filter
     public function getNonGroupRules()
     {
         return $this->getRawRules(self::NON_GROUP_RULES);
-;
     }
 
     public function getNonGroupRuleIterator()
