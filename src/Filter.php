@@ -92,7 +92,7 @@ class Filter
 
     public function getFilteredSource($userAgents = null)
     {
-        $it = $this->getFilteredRuleIterator($userAgents);
+        $it = $this->getRuleIterator($userAgents);
         $filteredRules = 'User-agent: *';
         foreach ($it as $rule) {
             $line = $rule['key'] . ': ' . $rule['value'];
@@ -104,7 +104,7 @@ class Filter
         return $filteredRules;
     }
 
-    public function getFilteredRuleIterator($userAgents = null)
+    public function getRuleIterator($userAgents = null)
     {
         $rules = (string)$this->getRules($userAgents);
         $txtParser = new TxtParser($this->options);
@@ -156,6 +156,53 @@ class Filter
         $rules = (string)$this->getNonGroupRules();
         $txtParser = new TxtParser($this->options);
         return $txtParser->getRuleIterator($txtParser->getLineIterator($rules));
+    }
+
+    /**
+     * Get the first value of the directive
+     *
+     * @param string $directive directive name like Crawl-delay
+     * @param string|array|null $userAgents User-agents in order of preference
+     * @return ?string value of the directive
+     */
+    public function getValue(string $directive, $userAgents = null)
+    {
+        $it = $this->getValueIterator($directive, $userAgents);
+        return $it->current();
+    }
+
+    public function getValueIterator(string $directive, $userAgents = null)
+    {
+        $it = $this->getRuleIterator($userAgents);
+        return $this->getFilteredValueIterator($it, $directive);
+    }
+
+    /**
+     * Get non-group directive value
+     *
+     * @param string $directive Name of the directive
+     * @return ?string The first value of the directive or null if not defined
+     */
+    public function getNonGroupValue(string $directive)
+    {
+        $it = $this->getNonGroupIterator($directive);
+        return $it->current();
+    }
+
+    public function getNonGroupIterator(string $directive)
+    {
+        $it = $this->getNonGroupRuleIterator();
+        return $this->getFilteredValueIterator($it, $directive);
+    }
+
+    protected function getFilteredValueIterator(\Generator $it, string $directive)
+    {
+        $directive = strtolower($directive);
+        foreach ($it as $rule) {
+            if (strtolower($rule['key']) === $directive) {
+                yield $rule['value'];
+            }
+        }
     }
 
     private function normalizeName($name)

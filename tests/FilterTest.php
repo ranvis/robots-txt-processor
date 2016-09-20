@@ -138,4 +138,32 @@ class FilterTest extends PHPUnit_Framework_TestCase
         $this->assertNull($filter->getRawRules('a'));
         $this->assertNull($filter->getNonGroupRules());
     }
+
+    public function testGetValue()
+    {
+        $filter = new Filter();
+        $source = "User-agent: *\nDisallow: /\nCrawl-delay: 30\nCrawl-delay: 60\nCrawl-delay: 90";
+        $filter->setSource($source);
+        $this->assertSame('30', $filter->getValue('Crawl-delay'));
+        $this->assertSame('30', $filter->getValue('CRAWL-DELAY'));
+    }
+
+    public function testGetNonGroupValue()
+    {
+        $filter = new Filter();
+        $source = "User-agent: *\nDisallow: /\nSitemap: foo\n\nSitemap: bar\nSitemap: baz";
+        $filter->setSource($source);
+        $this->assertSame('bar', $filter->getNonGroupValue('sitemap'));
+    }
+
+    public function testGetNonGroupIterator()
+    {
+        $filter = new Filter();
+        $source = "User-agent: *\nDisallow: /\nSitemap: foo\n\nSitemap: bar\nSitemap: baz";
+        $filter->setSource($source);
+        $this->assertSame(['bar', 'baz'], iterator_to_array($filter->getNonGroupIterator('sitemap')));
+        $source = "Sitemap: foo\n\nUser-agent: *\nDisallow: /\n\nSitemap: bar\nSitemap: baz\n\nSitemap: qux";
+        $filter->setSource($source);
+        $this->assertSame(['foo', 'bar', 'baz', 'qux'], iterator_to_array($filter->getNonGroupIterator('sitemap')));
+    }
 }

@@ -1,7 +1,7 @@
 {
 	"name": "ranvis/robots-txt-processor",
-	"description": "TODO",
-	"keywords": ["robots.txt", "parser", "filter"],
+	"description": "robots.txt filter and tester for untrusted source",
+	"keywords": ["robots.txt", "parser", "filter", "tester"],
 	"license": "BSD-2-Clause",
 	"homepage": "https://github.com/ranvis/TODO/blob/master/README.md",
 	"support": {
