@@ -36,7 +36,9 @@ class TxtParser
         if ($this->options['supportLws']) {
             $lws = '(?:(?:\x0d\x0a?|\x0a)[ \t]+|[ \t]*)'; // *(LWS-ish | WSP)
             $maxLen = $this->options['maxLineLength'];
-            $source = preg_replace("/^[ \\t]*([A-Za-z-]{1,$maxLen})$lws:$lws(?=[^ \t#]|$)/m", '\1: ', $source);
+            if (preg_match('/^[ \t]+:|:$/m', $source)) {
+                $source = preg_replace("/^[ \\t]*([A-Za-z-]{1,$maxLen})$lws:$lws(?=[^ \\t#]|$)/m", '\1: ', $source);
+            }
         }
         return $source;
     }
@@ -46,7 +48,7 @@ class TxtParser
         $source = $this->replaceLws($source);
         $source = ltrim($source, "\x0a\x0d");
         while (strlen($source)) {
-            $records = preg_split('/(?:\x0d\x0a?+|\x0a){2,}/s', $source, 2); // 2 newlines of any type
+            $records = preg_split('/(?:\x0d\x0a?+|\x0a){2,}/', $source, 2); // 2 newlines of any type
             yield array_shift($records);
             $source = $records ? array_shift($records) : '';
         }
@@ -84,11 +86,15 @@ class TxtParser
         $record = $this->replaceLws($record);
         $record = rtrim($record, "\x0a\x0d");
         $maxLineLength = $this->options['maxLineLength'];
-        while (strlen($record)) {
-            $lines = preg_split('/[\x0a\x0d]+/s', $record, 2);
-            $line = $lines[0];
-            if (strlen($line) <= $maxLineLength) {
-                $line = preg_replace('/[ \t]*#.*$/s', '', $line); // remove comment
+        for ($offset = 0; !isset($match[2]); ) {
+            if (!preg_match('/[\x0a\x0d]+/', $record, $match, PREG_OFFSET_CAPTURE, $offset)) {
+                $match = ['', strlen($record), true];
+            } else {
+                $match = $match[0];
+            }
+            if ($match[1] <= $maxLineLength) {
+                $line = substr($record, $offset, $match[1] - $offset);
+                $line = preg_replace('/[ \t]*#.*/', '', $line); // remove comment
                 $line = ltrim($line, " \t"); // remove leading spaces
                 // trailing spaces are significant if no comment
                 if (strlen($line)) {
@@ -98,9 +104,9 @@ class TxtParser
                     }
                 }
             }
-            $record = count($lines) > 1 ? $lines[1] : '';
+            $offset = $match[1] + strlen($match[0]);
         }
-        return $record;
+        return substr($record, $offset);
     }
 
     public function getRuleIterator($lines)
