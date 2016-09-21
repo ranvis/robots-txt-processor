@@ -8,7 +8,7 @@ namespace Ranvis\RobotsTxt;
 
 class Filter
 {
-    const NON_GROUP_RULES = '#';
+    const NON_GROUP_KEY = '#';
 
     protected $options;
     protected $records;
@@ -22,6 +22,10 @@ class Filter
     {
         $this->options = $options + [
             'maxRecords' => 1000,
+            'maxWildcards' => 10,
+            'escapedWildcard' => true, // set true for safety if tester treats '%2A' as a wildcard '*'
+            'complementLeadingSlash' => true,
+            'pathMemberRegEx' => '/^(?:Dis)?Allow$/i',
         ];
     }
 
@@ -56,68 +60,59 @@ class Filter
      */
     public function setSource(string $source)
     {
-        $txtParser = new TxtParser($this->options);
+        $parser = new Parser($this->options);
         $maxRecords = $this->options['maxRecords'];
+        $it = $parser->getRecordIterator($source, FilterRecord::class);
         $this->records = [];
-        foreach ($txtParser->getRecordIterator($source) as $record) {
+        foreach ($it as $spec) {
             if (!$maxRecords--) {
+                while ($it->valid()) {
+                    $it->next();
+                }
                 break;
             }
-            $spec = $txtParser->getRecordSpec($record);
             $this->addRecord($spec);
+        }
+        $nonGroup = $it->getReturn();
+        if ($nonGroup) {
+            $this->addRecord([
+                'userAgents' => [self::NON_GROUP_KEY],
+                'record' => $nonGroup,
+            ]);
         }
     }
 
-    public function addRecord(array $spec)
+    protected function addRecord(array $spec)
     {
-        if (!empty($spec['nonGroup'])) { // merge non-group records
-            // cf. nongroupline of https://developers.google.com/webmasters/control-crawl-index/docs/robots_txt?hl=en
-            $userAgent = self::NON_GROUP_RULES;
-            if (isset($this->records[$userAgent])) {
-                $this->records[$userAgent] .= "\n";
-            } else {
-                $this->records[$userAgent] = '';
-            }
-            $this->records[$userAgent] .= $spec['rules'];
-            return;
-        }
         foreach ($spec['userAgents'] as $userAgent) {
-            $rules = $spec['rules'];
             $userAgent = $this->normalizeName($userAgent);
             if (!$this->targetUserAgents || isset($this->targetUserAgents[$userAgent])) {
-                $this->records[$userAgent] = $rules;
+                $this->records[$userAgent] = $spec['record'];
             }
         }
     }
 
     public function getFilteredSource($userAgents = null)
     {
-        $it = $this->getRuleIterator($userAgents);
-        $filteredRules = 'User-agent: *';
-        foreach ($it as $rule) {
-            $line = $rule['key'] . ': ' . $rule['value'];
-            $filteredRules .= "\n$line";
+        $filteredSource = "User-agent: *\x0d\x0a";
+        $filteredSource .= $this->getRecord($userAgents); // may be null
+        $nonGroupRecord = (string)$this->getNonGroupRecord();
+        if ($nonGroupRecord !== '') {
+            if ($filteredSource !== '') {
+                $filteredSource .= "\x0d\x0a";
+            }
+            $filteredSource .= $nonGroupRecord;
         }
-        if ($nonGroupRules = $this->getNonGroupRules()) {
-            $filteredRules .= "\n\n$nonGroupRules";
-        }
-        return $filteredRules;
-    }
-
-    public function getRuleIterator($userAgents = null)
-    {
-        $rules = (string)$this->getRules($userAgents);
-        $txtParser = new TxtParser($this->options);
-        return $txtParser->getRuleIterator($txtParser->getLineIterator($rules));
+        return $filteredSource;
     }
 
     /**
-     * Get rules for the first specified User-agents or '*'
+     * Get record for the first specified User-agents or '*'
      *
      * @param string|array|null $userAgents User-agents in order of preference
-     * @return string|null Rules
+     * @return RecordInterface|null Record of lines
      */
-    public function getRules($userAgents = null)
+    public function getRecord($userAgents = null)
     {
         if ($userAgents === null && $this->targetUserAgents !== null) {
             $userAgents = array_keys($this->targetUserAgents);
@@ -126,36 +121,29 @@ class Filter
             $userAgents[] = '*';
         }
         foreach ($userAgents as $userAgent) {
-            $rules = $this->getRawRules($userAgent);
-            if ($rules !== null) {
+            $record = $this->getRawRecord($userAgent);
+            if ($record !== null) {
                 break;
             }
         }
-        return $rules;
+        return $record;
     }
 
     /**
-     * Get rules for the specified User-agent
+     * Get record for the specified User-agent
      *
      * @param $userAgent User-agent
-     * @return string|null Rules
+     * @return RecordInterface|null Rules
      */
-    public function getRawRules(string $userAgent)
+    protected function getRawRecord(string $userAgent)
     {
         $userAgent = $this->normalizeName($userAgent);
         return $this->records[$userAgent] ?? null;
     }
 
-    public function getNonGroupRules()
+    public function getNonGroupRecord()
     {
-        return $this->getRawRules(self::NON_GROUP_RULES);
-    }
-
-    public function getNonGroupRuleIterator()
-    {
-        $rules = (string)$this->getNonGroupRules();
-        $txtParser = new TxtParser($this->options);
-        return $txtParser->getRuleIterator($txtParser->getLineIterator($rules));
+        return $this->getRawRecord(self::NON_GROUP_KEY);
     }
 
     /**
@@ -173,8 +161,8 @@ class Filter
 
     public function getValueIterator(string $directive, $userAgents = null)
     {
-        $it = $this->getRuleIterator($userAgents);
-        return $this->getFilteredValueIterator($it, $directive);
+        $record = $this->getRecord($userAgents);
+        return $this->getFilteredValueIterator($record, $directive);
     }
 
     /**
@@ -191,15 +179,15 @@ class Filter
 
     public function getNonGroupIterator(string $directive)
     {
-        $it = $this->getNonGroupRuleIterator();
-        return $this->getFilteredValueIterator($it, $directive);
+        $record = $this->getNonGroupRecord();
+        return $this->getFilteredValueIterator($record, $directive);
     }
 
-    protected function getFilteredValueIterator(\Generator $it, string $directive)
+    protected function getFilteredValueIterator(RecordInterface $record, string $directive)
     {
-        $directive = strtolower($directive);
-        foreach ($it as $rule) {
-            if (strtolower($rule['key']) === $directive) {
+        $directive = ucfirst(strtolower($directive));
+        foreach ($record as $rule) {
+            if ($rule['field'] === $directive) {
                 yield $rule['value'];
             }
         }

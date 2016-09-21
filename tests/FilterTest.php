@@ -15,32 +15,39 @@ class FilterTest extends PHPUnit_Framework_TestCase
     {
         $filter = new Filter();
         $filter->setUserAgents(...$filterArgs);
-        $filter->addRecord(['userAgents' => ['a'], 'rules' => 'data-a']);
-        $filter->addRecord(['userAgents' => ['b'], 'rules' => 'data-b']);
-        $filter->addRecord(['userAgents' => ['*'], 'rules' => 'fallback']);
-        $this->assertSame($expected, $filter->getRules($target));
+        $source = "User-agent: a\nDisallow: /path-a\n\nUser-agent: b\nDisallow: /path-b\n\nUser-agent: *\nDisallow: /fallback";
+        $filter->setSource($source);
+        $record = $filter->getRecord($target);
+        $it = $record ? $record->getIterator() : null;
+        $line = $it ? $it->current() : null;
+        $line = $line ? $record->lineToString($line) : null;
+        $this->assertSame($expected, $line);
+        if ($it) {
+            $it->next();
+        }
+        $this->assertTrue(!$it || !$it->valid());
     }
 
     public function getTestSetUserAgentsData()
     {
         return [
-            [['a'], 'a', 'data-a'],
-            [['a'], 'b', 'fallback'],
-            [['a'], 'c', 'fallback'],
-            [[['a', 'b']], 'a', 'data-a'],
-            [[['a', 'b']], null, 'data-a'],
-            [[['b', 'a']], 'a', 'data-a'],
-            [[['b', 'a']], null, 'data-b'],
-            [[['a', 'b']], 'b', 'data-b'],
-            [[['a', 'b']], 'c', 'fallback'],
-            [['c'], 'a', 'fallback'],
-            [['c'], 'b', 'fallback'],
-            [['c'], 'c', 'fallback'],
-            [['a', false], 'a', 'data-a'],
+            [['a'], 'a', "Disallow: /path-a\x0d\x0a"],
+            [['a'], 'b', "Disallow: /fallback\x0d\x0a"],
+            [['a'], 'c', "Disallow: /fallback\x0d\x0a"],
+            [[['a', 'b']], 'a', "Disallow: /path-a\x0d\x0a"],
+            [[['a', 'b']], null, "Disallow: /path-a\x0d\x0a"],
+            [[['b', 'a']], 'a', "Disallow: /path-a\x0d\x0a"],
+            [[['b', 'a']], null, "Disallow: /path-b\x0d\x0a"],
+            [[['a', 'b']], 'b', "Disallow: /path-b\x0d\x0a"],
+            [[['a', 'b']], 'c', "Disallow: /fallback\x0d\x0a"],
+            [['c'], 'a', "Disallow: /fallback\x0d\x0a"],
+            [['c'], 'b', "Disallow: /fallback\x0d\x0a"],
+            [['c'], 'c', "Disallow: /fallback\x0d\x0a"],
+            [['a', false], 'a', "Disallow: /path-a\x0d\x0a"],
             [['a', false], 'b', null],
             [['a', false], 'c', null],
-            [[[]], 'a', 'fallback'],
-            [[false], 'a', 'data-a'],
+            [[[]], 'a', "Disallow: /fallback\x0d\x0a"],
+            [[false], 'a', "Disallow: /path-a\x0d\x0a"],
         ];
     }
 
@@ -48,95 +55,83 @@ class FilterTest extends PHPUnit_Framework_TestCase
     {
         $filter = new Filter();
         $filter->setSource('');
-        $this->assertNull($filter->getRawRules('a'));
-        $this->assertNull($filter->getRawRules('*'));
-        $filter->setSource('User-Agent: Aa');
-        $this->assertNotNull($filter->getRawRules('aA'));
+        $this->assertNull($filter->getRecord('a'));
+        $this->assertNull($filter->getRecord('*'));
+        $filter->setSource("User-Agent: Aa\nDisallow: /");
+        $this->assertNotNull($filter->getRecord('aA'));
     }
 
     /**
      * @dataProvider getTestGetFilteredSourceData
      */
-    public function testGetFilteredSource($ua, $data)
+    public function testGetFilteredSource($ua, $expected)
     {
         $filter = new Filter();
-        $filter->addRecord(['userAgents' => ['a'], 'rules' => 'key:value-a']);
-        $filter->addRecord(['userAgents' => ['b'], 'rules' => 'key:value-b']);
-        $filter->addRecord(['userAgents' => ['*'], 'rules' => 'key:fallback']);
-        $filter->addRecord(['nonGroup' => true, 'rules' => 'key:non-group']);
-        $this->assertSame($data, $filter->getFilteredSource($ua));
+        $source = "User-agent: a\nDisallow:/path-a\n\n";
+        $source .= "User-agent: b\nDisallow:/path-b\n\n";
+        $source .= "User-agent: *\nDisallow:/fallback\n\n";
+        $source .= "key:non-group\n\n";
+        $filter->setSource($source);
+        $this->assertSame(str_replace("\n", "\x0d\x0a", $expected), $filter->getFilteredSource($ua));
     }
 
     public function getTestGetFilteredSourceData()
     {
         return [
-            ['A', "User-agent: *\nkey: value-a\n\nkey:non-group"],
-            ['B', "User-agent: *\nkey: value-b\n\nkey:non-group"],
-            ['C', "User-agent: *\nkey: fallback\n\nkey:non-group"],
+            ['A', "User-agent: *\nDisallow: /path-a\n\nKey: non-group\n"],
+            ['B', "User-agent: *\nDisallow: /path-b\n\nKey: non-group\n"],
+            ['C', "User-agent: *\nDisallow: /fallback\n\nKey: non-group\n"],
         ];
     }
 
-    public function testGetRules()
+    public function testGetRecord()
     {
         // TODO:
     }
 
-    public function testGetRawRules()
-    {
-        $filter = new Filter();
-        $filter->addRecord(['userAgents' => ['a'], 'rules' => 'data-a']);
-        $filter->addRecord(['userAgents' => ['b'], 'rules' => 'data-b']);
-        $filter->addRecord(['userAgents' => ['*'], 'rules' => 'fallback']);
-        $filter->addRecord(['nonGroup' => true, 'rules' => 'non-group']);
-        $this->assertSame('data-a', $filter->getRawRules('a'));
-        $this->assertSame('data-b', $filter->getRawRules('b'));
-        $this->assertSame(null, $filter->getRawRules('c'));
-        $this->assertSame('fallback', $filter->getRawRules('*'));
-    }
-
     /**
-     * @dataProvider getTestGetNonGroupRulesData
+     * @dataProvider getTestGetNonGroupRecordData
      */
-    public function testGetNonGroupRules($source, $expected)
+    public function testGetNonGroupRecord($source, $expected)
     {
         $filter = new Filter();
         $filter->setSource($source);
-        $this->assertSame($expected, $filter->getNonGroupRules());
+        $this->assertSame(str_replace("\n", "\x0d\x0a", $expected), (string)$filter->getNonGroupRecord());
     }
 
-    public function getTestGetNonGroupRulesData()
+    public function getTestGetNonGroupRecordData()
     {
         return [
             [
-                "non-group\n\nUser-agent: a\ndata-a\n\nUser-agent: b\ndata-b\n\nUser-agent: *\nfallback",
-                "non-group"
+                "Sitemap:non-group\n\nUser-agent: a\ndata-a\n\nUser-agent: b\ndata-b\n\nUser-agent: *\nfallback",
+                "Sitemap: non-group\n"
             ], [
-                "User-agent: a\ndata-a\n\nUser-agent: b\ndata-b\n\nUser-agent: *\nfallback\n\nnon-group",
-                "non-group"
+                "User-agent: a\ndata-a\n\nUser-agent: b\ndata-b\n\nUser-agent: *\nfallback\n\nSitemap:non-group",
+                "Sitemap: non-group\n"
             ], [
-                "non-group-1\n\nUser-agent: a\ndata-a\n\nUser-agent: b\ndata-b\n\nUser-agent: *\nfallback\n\nnon-group-2",
-                "non-group-1\nnon-group-2"
+                "Sitemap:non-group-1\n\nUser-agent: a\ndata-a\n\nUser-agent: b\ndata-b\n\nUser-agent: *\nfallback\n\nSitemap:non-group-2",
+                "Sitemap: non-group-1\nSitemap: non-group-2\n"
             ],
         ];
     }
 
     public function testOptionMaxRecords()
     {
-        $source = "User-agent: a\ndata-a\n\nUser-agent: b\nUser-agent: b2\ndata-b\n\nUser-agent: c\ndata-c";
+        $source = "User-agent: a\nDisallow: /path-a\n\nUser-agent: b\nUser-agent: b2\nDisallow: /path-b\n\nUser-agent: c\nDisallow: /path-c";
         $filter = new Filter(['maxRecords' => 1000]);
         $filter->setSource($source);
-        $this->assertSame('data-c', $filter->getRawRules('c'));
+        $this->assertSame("Disallow: /path-c\x0d\x0a", (string)$filter->getRecord('c'));
         $filter = new Filter(['maxRecords' => 3]);
         $filter->setSource($source);
-        $this->assertSame('data-c', $filter->getRawRules('c'));
+        $this->assertSame("Disallow: /path-c\x0d\x0a", (string)$filter->getRecord('c'));
         $filter = new Filter(['maxRecords' => 2]);
         $filter->setSource($source);
-        $this->assertNull($filter->getRawRules('c'));
-        $this->assertSame('data-b', $filter->getRawRules('b'));
-        $this->assertSame('data-b', $filter->getRawRules('b2'));
+        $this->assertSame('', (string)$filter->getRecord('c'));
+        $this->assertSame("Disallow: /path-b\x0d\x0a", (string)$filter->getRecord('b'));
+        $this->assertSame("Disallow: /path-b\x0d\x0a", (string)$filter->getRecord('b2'));
         $filter = new Filter(['maxRecords' => 0]);
-        $this->assertNull($filter->getRawRules('a'));
-        $this->assertNull($filter->getNonGroupRules());
+        $this->assertNull($filter->getRecord('a'));
+        $this->assertNull($filter->getNonGroupRecord());
     }
 
     public function testGetValue()
@@ -153,7 +148,7 @@ class FilterTest extends PHPUnit_Framework_TestCase
         $filter = new Filter();
         $source = "User-agent: *\nDisallow: /\nSitemap: foo\n\nSitemap: bar\nSitemap: baz";
         $filter->setSource($source);
-        $this->assertSame('bar', $filter->getNonGroupValue('sitemap'));
+        $this->assertSame('foo', $filter->getNonGroupValue('sitemap'));
     }
 
     public function testGetNonGroupIterator()
@@ -161,7 +156,7 @@ class FilterTest extends PHPUnit_Framework_TestCase
         $filter = new Filter();
         $source = "User-agent: *\nDisallow: /\nSitemap: foo\n\nSitemap: bar\nSitemap: baz";
         $filter->setSource($source);
-        $this->assertSame(['bar', 'baz'], iterator_to_array($filter->getNonGroupIterator('sitemap')));
+        $this->assertSame(['foo', 'bar', 'baz'], iterator_to_array($filter->getNonGroupIterator('sitemap')));
         $source = "Sitemap: foo\n\nUser-agent: *\nDisallow: /\n\nSitemap: bar\nSitemap: baz\n\nSitemap: qux";
         $filter->setSource($source);
         $this->assertSame(['foo', 'bar', 'baz', 'qux'], iterator_to_array($filter->getNonGroupIterator('sitemap')));
