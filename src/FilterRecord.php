@@ -17,6 +17,9 @@ class FilterRecord extends Record
 
     public function addLine(array $line)
     {
+        if (count($this->lines) >= $this->options['maxLines']) {
+            return;
+        }
         if (preg_match($this->options['pathMemberRegEx'], $line['field'])) {
             $path = $line['value'];
             if ($this->options['escapedWildcard']) {

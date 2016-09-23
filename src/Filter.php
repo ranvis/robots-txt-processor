@@ -25,7 +25,6 @@ class Filter
             'maxWildcards' => 10,
             'escapedWildcard' => true, // set true for safety if tester treats '%2A' as a wildcard '*'
             'complementLeadingSlash' => true,
-            'pathMemberRegEx' => '/^(?:Dis)?Allow$/i',
         ];
     }
 
@@ -35,7 +34,6 @@ class Filter
      *
      * @param string|array|false $userAgents User-agents to keep, false to reset and keep all
      * @param bool $fallback True to keep fallback '*' record
-     * @return string|null Rules
      */
     public function setUserAgents($userAgents, bool $fallback = true)
     {
@@ -57,12 +55,15 @@ class Filter
      * Parse robots.txt string
      *
      * @param $source robots.txt data
+     * @param ?FilterParser $parser FilterParser
      */
-    public function setSource(string $source)
+    public function setSource(string $source, FilterParser $parser = null)
     {
-        $parser = new Parser($this->options);
+        if ($parser === null) {
+            $parser = new FilterParser($this->options);
+        }
         $maxRecords = $this->options['maxRecords'];
-        $it = $parser->getRecordIterator($source, FilterRecord::class);
+        $it = $parser->getRecordIterator($source);
         $this->records = [];
         foreach ($it as $spec) {
             if (!$maxRecords--) {
@@ -75,10 +76,7 @@ class Filter
         }
         $nonGroup = $it->getReturn();
         if ($nonGroup) {
-            $this->addRecord([
-                'userAgents' => [self::NON_GROUP_KEY],
-                'record' => $nonGroup,
-            ]);
+            $this->records[self::NON_GROUP_KEY] = $nonGroup;
         }
     }
 
@@ -173,11 +171,11 @@ class Filter
      */
     public function getNonGroupValue(string $directive)
     {
-        $it = $this->getNonGroupIterator($directive);
+        $it = $this->getNonGroupValueIterator($directive);
         return $it->current();
     }
 
-    public function getNonGroupIterator(string $directive)
+    public function getNonGroupValueIterator(string $directive)
     {
         $record = $this->getNonGroupRecord();
         return $this->getFilteredValueIterator($record, $directive);

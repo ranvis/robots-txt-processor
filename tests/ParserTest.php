@@ -67,10 +67,9 @@ class ParserTest extends PHPUnit_Framework_TestCase
         return [
             [1000, ['abc', 'abcde', 'abcd']],
             [5, ['abc', 'abcde', 'abcd']],
-            [4, ['abc', 'abcd']],
-            [3, ['abc']],
-            [2, null],
-            [0, null],
+            [4, ['abc', 'abcd', 'abcd']],
+            [3, ['abc', 'abc', 'abc']],
+            [2, ['ab', 'ab', 'ab']],
         ];
     }
 
@@ -88,11 +87,11 @@ class ParserTest extends PHPUnit_Framework_TestCase
         return [
             [1000, "Disallow: 123456789012345678\nDisallow: 123456789012345", "Disallow: 123456789012345678\nDisallow: 123456789012345"],
             [18, "Disallow: 123456789012345678\nDisallow: 123456789012345", "Disallow: 123456789012345678\nDisallow: 123456789012345"],
-            [17, "Disallow: 123456789012345678\nDisallow: 123456789012345", "Disallow: 123456789012345"],
-            [15, "Disallow: 123456789012345678\nDisallow: 123456789012345", "Disallow: 123456789012345"],
-            [14, "Disallow: 123456789012345678\nDisallow: 123456789012345", ""],
-            [12, "Disallow: 123456789012345678\nDisallow: 123456789012345", ""],
-            [0, "Disallow: 123456789012345678\nDisallow: 123456789012345", ""],
+            [17, "Disallow: 123456789012345678\nDisallow: 123456789012345", "-ignored-: 18\nDisallow: 123456789012345"],
+            [15, "Disallow: 123456789012345678\nDisallow: 123456789012345", "-ignored-: 18\nDisallow: 123456789012345"],
+            [14, "Disallow: 123456789012345678\nDisallow: 123456789012345", "-ignored-: 18\n-ignored-: 15"],
+            [12, "Disallow: 123456789012345678\nDisallow: 123456789012345", "-ignored-: 18\n-ignored-: 15"],
+            [0, "Disallow: 123456789012345678\nDisallow: 123456789012345", "-ignored-: 18\n-ignored-: 15"],
         ];
     }
 
@@ -121,6 +120,8 @@ class ParserTest extends PHPUnit_Framework_TestCase
             ["\x0d"],
         ];
     }
+
+    // TODO: testRegisterGroupDirective
 
     private function lineIteratorToString($it)
     {

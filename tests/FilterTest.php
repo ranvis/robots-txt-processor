@@ -151,14 +151,14 @@ class FilterTest extends PHPUnit_Framework_TestCase
         $this->assertSame('foo', $filter->getNonGroupValue('sitemap'));
     }
 
-    public function testGetNonGroupIterator()
+    public function testGetNonGroupValueIterator()
     {
         $filter = new Filter();
         $source = "User-agent: *\nDisallow: /\nSitemap: foo\n\nSitemap: bar\nSitemap: baz";
         $filter->setSource($source);
-        $this->assertSame(['foo', 'bar', 'baz'], iterator_to_array($filter->getNonGroupIterator('sitemap')));
+        $this->assertSame(['foo', 'bar', 'baz'], iterator_to_array($filter->getNonGroupValueIterator('sitemap')));
         $source = "Sitemap: foo\n\nUser-agent: *\nDisallow: /\n\nSitemap: bar\nSitemap: baz\n\nSitemap: qux";
         $filter->setSource($source);
-        $this->assertSame(['foo', 'bar', 'baz', 'qux'], iterator_to_array($filter->getNonGroupIterator('sitemap')));
+        $this->assertSame(['foo', 'bar', 'baz', 'qux'], iterator_to_array($filter->getNonGroupValueIterator('sitemap')));
     }
 }

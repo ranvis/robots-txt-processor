@@ -1,12 +1,9 @@
 {
 	"name": "ranvis/robots-txt-processor",
-	"description": "robots.txt filter and tester for untrusted source",
+	"description": "robots.txt filter and tester for untrusted source.",
 	"keywords": ["robots.txt", "parser", "filter", "tester"],
 	"license": "BSD-2-Clause",
-	"homepage": "https://github.com/ranvis/TODO/blob/master/README.md",
-	"support": {
-		"wiki": "https://github.com/ranvis/TODO/issues"
-	},
+	"homepage": "https://github.com/ranvis/robots-txt-processor/blob/master/README.md",
 	"authors": [
 		{
 			"name": "SATO Kentaro",
