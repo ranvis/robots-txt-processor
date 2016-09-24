@@ -131,7 +131,8 @@ class ParserTest extends PHPUnit_Framework_TestCase
         $this->assertSame('yes', $tester->getValue('My-custom-flag', 'crawler'));
         $this->assertSame(null, $tester->getValue('My-custom-flag', 'robot'));
         $this->assertSame(null, $tester->getValue('my-custom-value', 'crawler'));
-        $this->assertSame('30', $tester->getNonGroupValue('my-custom-value'));
+        $recordSet = $tester->getRecordSet();
+        $this->assertSame('30', $recordSet->getNonGroupValue('my-custom-value'));
     }
 
     private function lineIteratorToString($it)

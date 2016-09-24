@@ -8,10 +8,8 @@ namespace Ranvis\RobotsTxt;
 
 class Filter
 {
-    const NON_GROUP_KEY = '#';
-
     protected $options;
-    protected $records;
+    protected $recordSet;
     protected $targetUserAgents;
 
     /**
@@ -48,7 +46,7 @@ class Filter
         $this->targetUserAgents = array_flip(array_map(function ($userAgent) {
             return $this->normalizeName($userAgent);
         }, $userAgents));
-        $this->records = null; // reset
+        $this->recordSet = null; // reset
     }
 
     /**
@@ -65,7 +63,7 @@ class Filter
             $it = $source;
         }
         $maxRecords = $this->options['maxRecords'];
-        $this->records = [];
+        $this->recordSet = new RecordSet();
         foreach ($it as $spec) {
             if (!$maxRecords--) {
                 while ($it->valid()) {
@@ -77,7 +75,7 @@ class Filter
         }
         $nonGroup = $it->getReturn();
         if ($nonGroup) {
-            $this->records[self::NON_GROUP_KEY] = $nonGroup;
+            $this->recordSet->addNonGroup($nonGroup);
         }
     }
 
@@ -86,16 +84,22 @@ class Filter
         foreach ($spec['userAgents'] as $userAgent) {
             $userAgent = $this->normalizeName($userAgent);
             if (!$this->targetUserAgents || isset($this->targetUserAgents[$userAgent])) {
-                $this->records[$userAgent] = $spec['record'];
+                $this->recordSet->add($userAgent, $spec['record']);
             }
         }
+    }
+
+    public function getRecordSet()
+    {
+        // for now...
+        return $this->recordSet;
     }
 
     public function getFilteredSource($userAgents = null)
     {
         $filteredSource = "User-agent: *\x0d\x0a";
         $filteredSource .= $this->getRecord($userAgents); // may be null
-        $nonGroupRecord = (string)$this->getNonGroupRecord();
+        $nonGroupRecord = (string)$this->recordSet->getNonGroupRecord();
         if ($nonGroupRecord !== '') {
             if ($filteredSource !== '') {
                 $filteredSource .= "\x0d\x0a";
@@ -103,47 +107,6 @@ class Filter
             $filteredSource .= $nonGroupRecord;
         }
         return $filteredSource;
-    }
-
-    /**
-     * Get record for the first specified User-agents or '*'
-     *
-     * @param string|array|null $userAgents User-agents in order of preference
-     * @return RecordInterface|null Record of lines
-     */
-    public function getRecord($userAgents = null)
-    {
-        if ($userAgents === null && $this->targetUserAgents !== null) {
-            $userAgents = array_keys($this->targetUserAgents);
-        } else {
-            $userAgents = (array)$userAgents;
-            $userAgents[] = '*';
-        }
-        $record = null;
-        foreach ($userAgents as $userAgent) {
-            $record = $this->getRawRecord($userAgent);
-            if ($record !== null) {
-                break;
-            }
-        }
-        return $record;
-    }
-
-    /**
-     * Get record for the specified User-agent
-     *
-     * @param string $userAgent User-agent
-     * @return RecordInterface|null Rules
-     */
-    protected function getRawRecord(string $userAgent)
-    {
-        $userAgent = $this->normalizeName($userAgent);
-        return $this->records[$userAgent] ?? null;
-    }
-
-    public function getNonGroupRecord()
-    {
-        return $this->getRawRecord(self::NON_GROUP_KEY);
     }
 
     /**
@@ -162,46 +125,40 @@ class Filter
     public function getValueIterator(string $directive, $userAgents = null)
     {
         $record = $this->getRecord($userAgents);
-        return $this->getFilteredValueIterator($record, $directive);
+        return RecordSet::getFilteredValueIterator($record, $directive);
     }
 
     /**
-     * Get non-group directive value
+     * Get record for the first specified User-agents or '*'
      *
-     * @param string $directive Name of the directive
-     * @return ?string The first value of the directive or null if not defined
+     * @param string|array|null $userAgents User-agents in order of preference
+     * @return RecordInterface|null Record of lines
      */
-    public function getNonGroupValue(string $directive)
+    public function getRecord($userAgents = null)
     {
-        $it = $this->getNonGroupValueIterator($directive);
-        return $it->current();
-    }
-
-    public function getNonGroupValueIterator(string $directive)
-    {
-        $record = $this->getNonGroupRecord();
-        return $this->getFilteredValueIterator($record, $directive);
-    }
-
-    protected function getFilteredValueIterator(RecordInterface $record = null, string $directive)
-    {
-        if ($record) {
-            $directive = ucfirst(strtolower($directive));
-            foreach ($record as $rule) {
-                if ($rule['field'] === $directive) {
-                    yield $rule['value'];
+        if ($userAgents === null && $this->targetUserAgents !== null) {
+            $userAgents = array_keys($this->targetUserAgents);
+        } else {
+            $userAgents = (array)$userAgents;
+            $userAgents[] = '*';
+        }
+        $record = null;
+        if ($this->recordSet !== null) {
+            foreach ($userAgents as $userAgent) {
+                $record = $this->recordSet->getRecord($userAgent);
+                if ($record !== null) {
+                    break;
                 }
             }
         }
+        return $record;
     }
 
-    private function normalizeName($name)
+    private function normalizeName(string $name) : string
     {
         if (!$this->options['keepTrailingSpaces']) {
             $name = rtrim($name, "\t ");
         }
-        return preg_replace_callback('/[A-Z]+/', function ($match) {
-            return strtolower($match[0]);
-        }, $name);
+        return RecordSet::normalizeName($name);
     }
 }
