@@ -11,13 +11,14 @@ class FilterRecordTest extends PHPUnit_Framework_TestCase
     /**
      * @dataProvider getTestOptionEscapedWildcardData
      */
-    public function testOptionEscapedWildcard($maxL, $maxW, $ewFlag, $clsFlag, $field, $value, $expected)
+    public function testOptionEscapedWildcard($maxL, $maxW, $ewFlag, $clsFlag, $ktsFlag, $field, $value, $expected)
     {
         $filter = new FilterRecord([
             'maxLines' => $maxL,
             'maxWildcards' => $maxW,
             'escapedWildcard' => $ewFlag,
             'complementLeadingSlash' => $clsFlag,
+            'keepTrailingSpaces' => $ktsFlag,
             'pathMemberRegEx' => '/^(?:Dis)?Allow$/i',
         ]);
         if (!is_array($value)) {
@@ -44,48 +45,51 @@ class FilterRecordTest extends PHPUnit_Framework_TestCase
     {
         return [
             // maxLines
-            [1000, 10, false, true, 'Disallow', ['/a', '/b', '/c'], ['/a', '/b', '/c']],
-            [3, 10, false, true, 'Disallow', ['/a', '/b', '/c'], ['/a', '/b', '/c']],
-            [2, 10, false, true, 'Disallow', ['/a', '/b', '/c'], ['/a', '/b']],
-            [1, 10, false, true, 'Disallow', ['/a', '/b', '/c'], ['/a']],
-            [0, 10, false, true, 'Disallow', ['/a', '/b', '/c'], []],
+            [1000, 10, false, true, false, 'Disallow', ['/a', '/b', '/c'], ['/a', '/b', '/c']],
+            [3, 10, false, true, false, 'Disallow', ['/a', '/b', '/c'], ['/a', '/b', '/c']],
+            [2, 10, false, true, false, 'Disallow', ['/a', '/b', '/c'], ['/a', '/b']],
+            [1, 10, false, true, false, 'Disallow', ['/a', '/b', '/c'], ['/a']],
+            [0, 10, false, true, false, 'Disallow', ['/a', '/b', '/c'], []],
             // maxWildcards
-            [1000, 5, true, true, 'Unknown', '*****v****a***l**u*e', '*****v****a***l**u*e'],
-            [1000, 4, true, true, 'Unknown', '*****v****a***l**u*e', '*****v****a***l**u*e'],
-            [1000, 1, true, true, 'Unknown', '*****v****a***l**u*e', '*****v****a***l**u*e'],
-            [1000, 0, true, true, 'Unknown', '*****v****a***l**u*e', '*****v****a***l**u*e'],
-            [1000, 5, true, true, 'Allow', '*****v****a***l**u*e', '*v*a*l*u*e'],
-            [1000, 4, true, true, 'Allow', '*****v****a***l**u*e', null],
-            [1000, 4, true, true, 'Allow', '*****v****a***l**ue', '*v*a*l*ue'],
+            [1000, 5, true, true, false, 'Unknown', '*****v****a***l**u*e', '*****v****a***l**u*e'],
+            [1000, 4, true, true, false, 'Unknown', '*****v****a***l**u*e', '*****v****a***l**u*e'],
+            [1000, 1, true, true, false, 'Unknown', '*****v****a***l**u*e', '*****v****a***l**u*e'],
+            [1000, 0, true, true, false, 'Unknown', '*****v****a***l**u*e', '*****v****a***l**u*e'],
+            [1000, 5, true, true, false, 'Allow', '*****v****a***l**u*e', '*v*a*l*u*e'],
+            [1000, 4, true, true, false, 'Allow', '*****v****a***l**u*e', null],
+            [1000, 4, true, true, false, 'Allow', '*****v****a***l**ue', '*v*a*l*ue'],
             // escapedWildcard
-            [1000, 3, true, true, 'Disallow', '*/%2a%2A/%2a%2A', '*/*/*'],
-            [1000, 3, true, true, 'Disallow', '*/%2a%2A*%2a%2A', '*/*'],
-            [1000, 2, true, true, 'Disallow', '*/%2a%2A/%2a%2A', null],
-            [1000, 2, true, true, 'Disallow', '*/%2a%2A*%2a%2A', '*/*'],
-            [1000, 3, false, true, 'Disallow', '*/%2a%2A/%2a%2A', '*/%2a%2A/%2a%2A'],
-            [1000, 3, false, true, 'Disallow', '*/%2a%2A/%2a%2A', '*/%2a%2A/%2a%2A'],
-            [1000, 2, false, true, 'Disallow', '*/%2a%2A/%2a%2A', '*/%2a%2A/%2a%2A'],
-            [1000, 2, false, true, 'Disallow', '*/%2a%2A*%2a%2A', '*/%2a%2A*%2a%2A'],
-            [1000, 1, false, true, 'Disallow', '*/%2a%2A/%2a%2A', '*/%2a%2A/%2a%2A'],
-            [1000, 0, false, true, 'Disallow', '*/%2a%2A/%2a%2A', null],
+            [1000, 3, true, true, false, 'Disallow', '*/%2a%2A/%2a%2A', '*/*/*'],
+            [1000, 3, true, true, false, 'Disallow', '*/%2a%2A*%2a%2A', '*/*'],
+            [1000, 2, true, true, false, 'Disallow', '*/%2a%2A/%2a%2A', null],
+            [1000, 2, true, true, false, 'Disallow', '*/%2a%2A*%2a%2A', '*/*'],
+            [1000, 3, false, true, false, 'Disallow', '*/%2a%2A/%2a%2A', '*/%2a%2A/%2a%2A'],
+            [1000, 3, false, true, false, 'Disallow', '*/%2a%2A/%2a%2A', '*/%2a%2A/%2a%2A'],
+            [1000, 2, false, true, false, 'Disallow', '*/%2a%2A/%2a%2A', '*/%2a%2A/%2a%2A'],
+            [1000, 2, false, true, false, 'Disallow', '*/%2a%2A*%2a%2A', '*/%2a%2A*%2a%2A'],
+            [1000, 1, false, true, false, 'Disallow', '*/%2a%2A/%2a%2A', '*/%2a%2A/%2a%2A'],
+            [1000, 0, false, true, false, 'Disallow', '*/%2a%2A/%2a%2A', null],
             // complementLeadingSlash
-            [1000, 3, true, true, 'Disallow', '', ''],
-            [1000, 3, true, true, 'Disallow', '*', '*'],
-            [1000, 3, true, true, 'Disallow', '*foo', '*foo'],
-            [1000, 3, true, true, 'Disallow', 'foo*bar', '/foo*bar'],
-            [1000, 3, true, true, 'Disallow', 'foo$', 'foo$'],
-            [1000, 3, true, true, 'Disallow', '%2a', '*'],
-            [1000, 3, false, true, 'Disallow', '%2a', '/%2a'],
-            [1000, 3, false, true, 'Disallow', 'foo', '/foo'],
-            [1000, 3, false, true, 'Sitemap', 'foo', 'foo'], // not path, and absoluteURL is expected
-            [1000, 3, true, false, 'Disallow', '', ''],
-            [1000, 3, true, false, 'Disallow', '*', '*'],
-            [1000, 3, true, false, 'Disallow', '*foo', '*foo'],
-            [1000, 3, true, false, 'Disallow', 'foo*bar', null],
-            [1000, 3, true, false, 'Disallow', 'foo$', 'foo$'],
-            [1000, 3, true, false, 'Disallow', '%2a', '*'],
-            [1000, 3, false, false, 'Disallow', '%2a', null],
-            [1000, 3, false, false, 'Disallow', 'foo', null],
+            [1000, 3, true, true, false, 'Disallow', '', ''],
+            [1000, 3, true, true, false, 'Disallow', '*', '*'],
+            [1000, 3, true, true, false, 'Disallow', '*foo', '*foo'],
+            [1000, 3, true, true, false, 'Disallow', 'foo*bar', '/foo*bar'],
+            [1000, 3, true, true, false, 'Disallow', 'foo$', 'foo$'],
+            [1000, 3, true, true, false, 'Disallow', '%2a', '*'],
+            [1000, 3, false, true, false, 'Disallow', '%2a', '/%2a'],
+            [1000, 3, false, true, false, 'Disallow', 'foo', '/foo'],
+            [1000, 3, false, true, false, 'Sitemap', 'foo', 'foo'], // not path, and absoluteURL is expected
+            [1000, 3, true, false, false, 'Disallow', '', ''],
+            [1000, 3, true, false, false, 'Disallow', '*', '*'],
+            [1000, 3, true, false, false, 'Disallow', '*foo', '*foo'],
+            [1000, 3, true, false, false, 'Disallow', 'foo*bar', null],
+            [1000, 3, true, false, false, 'Disallow', 'foo$', 'foo$'],
+            [1000, 3, true, false, false, 'Disallow', '%2a', '*'],
+            [1000, 3, false, false, false, 'Disallow', '%2a', null],
+            [1000, 3, false, false, false, 'Disallow', 'foo', null],
+            // keepTrailingSpaces
+            [1000, 3, false, false, false, 'Disallow', "/path \t ", '/path'],
+            [1000, 3, false, false, true, 'Disallow', "/path \t ", "/path \t "],
         ];
     }
 }

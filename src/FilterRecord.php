@@ -20,6 +20,9 @@ class FilterRecord extends Record
         if (count($this->lines) >= $this->options['maxLines']) {
             return;
         }
+        if (!$this->options['keepTrailingSpaces']) {
+            $line['value'] = rtrim($line['value'], "\t ");
+        }
         if (preg_match($this->options['pathMemberRegEx'], $line['field'])) {
             $path = $line['value'];
             if ($this->options['escapedWildcard']) {

@@ -13,6 +13,7 @@ class FilterParser extends Parser
         $options += [
             'maxLines' => 1000,
             'pathMemberRegEx' => '/^(?:Dis)?Allow$/i',
+            'keepTrailingSpaces' => false,
         ];
         parent::__construct($options);
     }

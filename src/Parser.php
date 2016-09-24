@@ -17,7 +17,7 @@ class Parser
     const TYPE_NON_GROUP = 3;
 
     /**
-     * @param $options Parse options
+     * @param array $options Parser options
      */
     public function __construct(array $options = [])
     {
@@ -90,8 +90,8 @@ class Parser
     }
 
     /**
-     * @param Traversable|array|string $it Parsed lines or raw source string
-     * @return Iterator Record iterator
+     * @param \Traversable|array|string $it Parsed lines or raw source string
+     * @return \Iterator Record iterator
      */
     public function getRecordIterator($it)
     {

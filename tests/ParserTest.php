@@ -121,7 +121,18 @@ class ParserTest extends PHPUnit_Framework_TestCase
         ];
     }
 
-    // TODO: testRegisterGroupDirective
+    public function testRegisterGroupDirective()
+    {
+        $tester = new Ranvis\RobotsTxt\Tester();
+        $source = "User-agent: crawler\nCrawl-delay: 60\nmy-custom-flag: yes\nmy-custom-value: 30";
+        $filter = new Ranvis\RobotsTxt\FilterParser();
+        $filter->registerGroupDirective('My-custom-flag');
+        $tester->setSource($filter->getRecordIterator($source));
+        $this->assertSame('yes', $tester->getValue('My-custom-flag', 'crawler'));
+        $this->assertSame(null, $tester->getValue('My-custom-flag', 'robot'));
+        $this->assertSame(null, $tester->getValue('my-custom-value', 'crawler'));
+        $this->assertSame('30', $tester->getNonGroupValue('my-custom-value'));
+    }
 
     private function lineIteratorToString($it)
     {

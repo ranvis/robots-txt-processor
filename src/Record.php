@@ -23,7 +23,7 @@ class Record implements RecordInterface
     {
         $result = '';
         foreach ($this as $line) {
-            $result .= self::lineToString($line);
+            $result .= static::lineToString($line);
         }
         return $result;
     }

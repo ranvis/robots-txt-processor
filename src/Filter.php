@@ -13,10 +13,9 @@ class Filter
     protected $options;
     protected $records;
     protected $targetUserAgents;
-    private $availUserAgents;
 
     /**
-     * @param $options Parse options
+     * @param array $options Parser options
      */
     public function __construct(array $options = [])
     {
@@ -25,6 +24,7 @@ class Filter
             'maxWildcards' => 10,
             'escapedWildcard' => true, // set true for safety if tester treats '%2A' as a wildcard '*'
             'complementLeadingSlash' => true,
+            'keepTrailingSpaces' => false,
         ];
     }
 
@@ -54,16 +54,17 @@ class Filter
     /**
      * Parse robots.txt string
      *
-     * @param $source robots.txt data
-     * @param ?FilterParser $parser FilterParser
+     * @param string|\Traversable $source robots.txt data or record iterator
      */
-    public function setSource(string $source, FilterParser $parser = null)
+    public function setSource($source)
     {
-        if ($parser === null) {
+        if (is_string($source)) {
             $parser = new FilterParser($this->options);
+            $it = $parser->getRecordIterator($source);
+        } else {
+            $it = $source;
         }
         $maxRecords = $this->options['maxRecords'];
-        $it = $parser->getRecordIterator($source);
         $this->records = [];
         foreach ($it as $spec) {
             if (!$maxRecords--) {
@@ -118,6 +119,7 @@ class Filter
             $userAgents = (array)$userAgents;
             $userAgents[] = '*';
         }
+        $record = null;
         foreach ($userAgents as $userAgent) {
             $record = $this->getRawRecord($userAgent);
             if ($record !== null) {
@@ -130,7 +132,7 @@ class Filter
     /**
      * Get record for the specified User-agent
      *
-     * @param $userAgent User-agent
+     * @param string $userAgent User-agent
      * @return RecordInterface|null Rules
      */
     protected function getRawRecord(string $userAgent)
@@ -181,18 +183,23 @@ class Filter
         return $this->getFilteredValueIterator($record, $directive);
     }
 
-    protected function getFilteredValueIterator(RecordInterface $record, string $directive)
+    protected function getFilteredValueIterator(RecordInterface $record = null, string $directive)
     {
-        $directive = ucfirst(strtolower($directive));
-        foreach ($record as $rule) {
-            if ($rule['field'] === $directive) {
-                yield $rule['value'];
+        if ($record) {
+            $directive = ucfirst(strtolower($directive));
+            foreach ($record as $rule) {
+                if ($rule['field'] === $directive) {
+                    yield $rule['value'];
+                }
             }
         }
     }
 
     private function normalizeName($name)
     {
+        if (!$this->options['keepTrailingSpaces']) {
+            $name = rtrim($name, "\t ");
+        }
         return preg_replace_callback('/[A-Z]+/', function ($match) {
             return strtolower($match[0]);
         }, $name);
