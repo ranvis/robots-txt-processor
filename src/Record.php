@@ -37,4 +37,15 @@ class Record implements RecordInterface
     {
         return $line['field'] . ': ' . $line['value'] . "\x0d\x0a";
     }
+
+    public function getValueIterator(string $directive)
+    {
+        $directive = ucfirst(strtolower($directive));
+        foreach ($this as $line) {
+            if ($line['field'] === $directive) {
+                yield $line['value'];
+            }
+        }
+    }
+
 }

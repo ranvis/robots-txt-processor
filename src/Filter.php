@@ -28,7 +28,7 @@ class Filter
 
     /**
      * Filter records on parse by User-agents.
-     * Also set default user-agents on getting rules.
+     * Also set default user-agents on getting record.
      *
      * @param string|array|false $userAgents User-agents to keep, false to reset and keep all
      * @param bool $fallback True to keep fallback '*' record
@@ -75,7 +75,7 @@ class Filter
         }
         $nonGroup = $it->getReturn();
         if ($nonGroup) {
-            $this->recordSet->addNonGroup($nonGroup);
+            $this->recordSet->setNonGroup($nonGroup);
         }
     }
 
@@ -95,18 +95,18 @@ class Filter
         return $this->recordSet;
     }
 
-    public function getFilteredSource($userAgents = null)
+    public function getFilteredRecordSet($userAgents = null)
     {
-        $filteredSource = "User-agent: *\x0d\x0a";
-        $filteredSource .= $this->getRecord($userAgents); // may be null
-        $nonGroupRecord = (string)$this->recordSet->getNonGroupRecord();
-        if ($nonGroupRecord !== '') {
-            if ($filteredSource !== '') {
-                $filteredSource .= "\x0d\x0a";
-            }
-            $filteredSource .= $nonGroupRecord;
+        $filteredSet = new RecordSet();
+        $record = $this->getRecord($userAgents);
+        if ($record) {
+            $filteredSet->add('*', $record);
         }
-        return $filteredSource;
+        $nonGroupRecord = $this->recordSet->getNonGroupRecord();
+        if ($nonGroupRecord) {
+            $filteredSet->setNonGroup($nonGroupRecord);
+        }
+        return $filteredSet;
     }
 
     /**
@@ -119,13 +119,16 @@ class Filter
     public function getValue(string $directive, $userAgents = null)
     {
         $it = $this->getValueIterator($directive, $userAgents);
-        return $it->current();
+        return $it->valid() ? $it->current() : null;
     }
 
     public function getValueIterator(string $directive, $userAgents = null)
     {
         $record = $this->getRecord($userAgents);
-        return RecordSet::getFilteredValueIterator($record, $directive);
+        if (!$record) {
+            return new \EmptyIterator();
+        }
+        return $record->getValueIterator($directive);
     }
 
     /**

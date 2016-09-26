@@ -21,7 +21,7 @@ class RecordSet
         $this->records[$userAgent] = $record;
     }
 
-    public function addNonGroup($record)
+    public function setNonGroup($record)
     {
         $this->records[self::NON_GROUP_KEY] = $record;
     }
@@ -43,6 +43,22 @@ class RecordSet
         return $this->getRecord(self::NON_GROUP_KEY);
     }
 
+    public function __toString()
+    {
+        $textRecords = [];
+        foreach ($this->records as $userAgent => $record) {
+            if ($userAgent === self::NON_GROUP_KEY) {
+                continue;
+            }
+            $textRecords[] = "User-agent: $userAgent\x0d\x0a" . $record;
+        }
+        $nonGroupRecord = (string)$this->getNonGroupRecord();
+        if ($nonGroupRecord !== '') {
+            $textRecords[] = $nonGroupRecord;
+        }
+        return implode("\x0d\x0a", $textRecords);
+    }
+
     /**
      * Get non-group directive value
      *
@@ -58,19 +74,10 @@ class RecordSet
     public function getNonGroupValueIterator(string $directive)
     {
         $record = $this->getNonGroupRecord();
-        return $this->getFilteredValueIterator($record, $directive);
-    }
-
-    public static function getFilteredValueIterator(RecordInterface $record = null, string $directive)
-    {
-        if ($record) {
-            $directive = ucfirst(strtolower($directive));
-            foreach ($record as $rule) {
-                if ($rule['field'] === $directive) {
-                    yield $rule['value'];
-                }
-            }
+        if (!$record) {
+            return new \EmptyIterator();
         }
+        return $record->getValueIterator($directive);
     }
 
     public static function normalizeName(string $name) : string

@@ -62,9 +62,9 @@ class FilterTest extends PHPUnit_Framework_TestCase
     }
 
     /**
-     * @dataProvider getTestGetFilteredSourceData
+     * @dataProvider getTestGetFilteredRecordSetData
      */
-    public function testGetFilteredSource($ua, $expected)
+    public function testGetFilteredRecordSet($ua, $expected)
     {
         $filter = new Filter();
         $source = "User-agent: a\nDisallow:/path-a\n\n";
@@ -72,10 +72,10 @@ class FilterTest extends PHPUnit_Framework_TestCase
         $source .= "User-agent: *\nDisallow:/fallback\n\n";
         $source .= "key:non-group\n\n";
         $filter->setSource($source);
-        $this->assertSame(str_replace("\n", "\x0d\x0a", $expected), $filter->getFilteredSource($ua));
+        $this->assertSame(str_replace("\n", "\x0d\x0a", $expected), (string)$filter->getFilteredRecordSet($ua));
     }
 
-    public function getTestGetFilteredSourceData()
+    public function getTestGetFilteredRecordSetData()
     {
         return [
             ['A', "User-agent: *\nDisallow: /path-a\n\nKey: non-group\n"],
@@ -161,10 +161,10 @@ class FilterTest extends PHPUnit_Framework_TestCase
         $source = "User-agent: *\nDisallow: /\nSitemap: foo\n\nSitemap: bar\nSitemap: baz";
         $filter->setSource($source);
         $recordSet = $filter->getRecordSet();
-        $this->assertSame(['foo', 'bar', 'baz'], iterator_to_array($recordSet->getNonGroupValueIterator('sitemap')));
+        $this->assertSame(['foo', 'bar', 'baz'], iterator_to_array($recordSet->getNonGroupValueIterator('sitemap'), false));
         $source = "Sitemap: foo\n\nUser-agent: *\nDisallow: /\n\nSitemap: bar\nSitemap: baz\n\nSitemap: qux";
         $filter->setSource($source);
         $recordSet = $filter->getRecordSet();
-        $this->assertSame(['foo', 'bar', 'baz', 'qux'], iterator_to_array($recordSet->getNonGroupValueIterator('sitemap')));
+        $this->assertSame(['foo', 'bar', 'baz', 'qux'], iterator_to_array($recordSet->getNonGroupValueIterator('sitemap'), false));
     }
 }
