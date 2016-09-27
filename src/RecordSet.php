@@ -30,7 +30,7 @@ class RecordSet
      * Get record for the specific User-agent
      *
      * @param string $userAgent User-agent
-     * @return RecordInterface|null Rules
+     * @return Record|null Rules
      */
     public function getRecord(string $userAgent)
     {

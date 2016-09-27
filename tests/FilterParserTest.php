@@ -4,16 +4,16 @@
  * @license BSD 2-Clause License
  */
 
-use Ranvis\RobotsTxt\FilterRecord;
+use Ranvis\RobotsTxt\FilterParser;
 
-class FilterRecordTest extends PHPUnit_Framework_TestCase
+class FilterParserTest extends PHPUnit_Framework_TestCase
 {
     /**
      * @dataProvider getTestOptionEscapedWildcardData
      */
     public function testOptionEscapedWildcard($maxL, $maxW, $ewFlag, $clsFlag, $ktsFlag, $field, $value, $expected)
     {
-        $filter = new FilterRecord([
+        $parser = new FilterParser([
             'maxLines' => $maxL,
             'maxWildcards' => $maxW,
             'escapedWildcard' => $ewFlag,
@@ -21,17 +21,16 @@ class FilterRecordTest extends PHPUnit_Framework_TestCase
             'keepTrailingSpaces' => $ktsFlag,
             'pathMemberRegEx' => '/^(?:Dis)?Allow$/i',
         ]);
+        $getLineType = (new ReflectionMethod($parser, 'getLineType'))->getClosure($parser);
         if (!is_array($value)) {
-            $filter->addLine(['field' => $field, 'value' => $value]);
-            $it = $filter->getIterator();
+            $it = $parser->iterableFilter([['type' => $getLineType($field), 'field' => $field, 'value' => $value]]);
             $line = $it->current();
             $this->assertSame($expected, $line ? $line['value'] : null);
             $it->next();
         } else {
-            while ($value) {
-                $filter->addLine(['field' => $field, 'value' => array_shift($value)]);
-            }
-            $it = $filter->getIterator();
+            $it = $parser->iterableFilter(array_map(function ($value) use ($getLineType, $field) {
+                return ['type' => $getLineType($field), 'field' => $field, 'value' => $value];
+            }, $value));
             while ($expected) {
                 $line = $it->current();
                 $this->assertSame(array_shift($expected), $line ? $line['value'] : null);

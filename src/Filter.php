@@ -22,7 +22,6 @@ class Filter
             'maxWildcards' => 10,
             'escapedWildcard' => true, // set true for safety if tester treats '%2A' as a wildcard '*'
             'complementLeadingSlash' => true,
-            'keepTrailingSpaces' => false,
         ];
     }
 
@@ -135,7 +134,7 @@ class Filter
      * Get record for the first specified User-agents or '*'
      *
      * @param string|array|null $userAgents User-agents in order of preference
-     * @return RecordInterface|null Record of lines
+     * @return Record|null Record of lines
      */
     public function getRecord($userAgents = null)
     {
@@ -159,9 +158,6 @@ class Filter
 
     private function normalizeName(string $name) : string
     {
-        if (!$this->options['keepTrailingSpaces']) {
-            $name = rtrim($name, "\t ");
-        }
         return RecordSet::normalizeName($name);
     }
 }

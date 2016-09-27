@@ -64,6 +64,7 @@ class Parser
                     $value = (string)strlen($value);
                 }
                 yield [
+                    'type' => $this->getLineType($field), // pass unnormalized
                     'field' => ucfirst(strtolower($field)),
                     'value' => $value,
                 ];
@@ -72,11 +73,11 @@ class Parser
         }
     }
 
-    protected function getLineType(array $line)
+    protected function getLineType(string $field)
     {
-        if (preg_match($this->groupMemberRegEx, $line['field'])) {
+        if (preg_match($this->groupMemberRegEx, $field)) {
             $type = self::TYPE_GROUP;
-        } elseif (preg_match($this->options['userAgentRegEx'], $line['field'])) {
+        } elseif (preg_match($this->options['userAgentRegEx'], $field)) {
             $type = self::TYPE_USER_AGENT;
         } else {
             $type = self::TYPE_NON_GROUP;
@@ -103,7 +104,7 @@ class Parser
         $currentAgents = $currentRecord = null;
         $nonGroupRecord = $this->createRecord();
         foreach ($it as $line) {
-            $type = $this->getLineType($line);
+            $type = $line['type'];
             if ($type === self::TYPE_USER_AGENT) {
                 if ($currentRecord) {
                     yield [

@@ -6,7 +6,7 @@
 
 namespace Ranvis\RobotsTxt;
 
-class Record implements RecordInterface
+class Record implements \IteratorAggregate
 {
     protected $lines = [];
 
