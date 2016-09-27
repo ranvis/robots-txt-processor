@@ -74,7 +74,7 @@ class Tester extends Filter
     public function isAllowed(string $targetPath, $userAgents = null)
     {
         if ($targetPath[0] != '/') {
-            throw new \InvalidArgumentException('Path is always started with slash: ' . $targetPath);
+            throw new \InvalidArgumentException('Path should be started with slash: ' . $targetPath);
         }
         $rules = $this->getPathRules($userAgents);
         $targetPath = $this->normalizePath($targetPath, false);

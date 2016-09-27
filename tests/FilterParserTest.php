@@ -23,12 +23,12 @@ class FilterParserTest extends PHPUnit_Framework_TestCase
         ]);
         $getLineType = (new ReflectionMethod($parser, 'getLineType'))->getClosure($parser);
         if (!is_array($value)) {
-            $it = $parser->iterableFilter([['type' => $getLineType($field), 'field' => $field, 'value' => $value]]);
+            $it = $parser->filter([['type' => $getLineType($field), 'field' => $field, 'value' => $value]]);
             $line = $it->current();
             $this->assertSame($expected, $line ? $line['value'] : null);
             $it->next();
         } else {
-            $it = $parser->iterableFilter(array_map(function ($value) use ($getLineType, $field) {
+            $it = $parser->filter(array_map(function ($value) use ($getLineType, $field) {
                 return ['type' => $getLineType($field), 'field' => $field, 'value' => $value];
             }, $value));
             while ($expected) {

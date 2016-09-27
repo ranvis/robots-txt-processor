@@ -37,7 +37,7 @@ class Parser
         $this->flushGroupDirective();
     }
 
-    public function flushGroupDirective()
+    protected function flushGroupDirective()
     {
         $this->groupMemberRegEx = '/^(?:' . implode('|', $this->groupedDirectives) . ')$/i';
     }

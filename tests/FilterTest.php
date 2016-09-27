@@ -132,9 +132,8 @@ class FilterTest extends PHPUnit_Framework_TestCase
         $this->assertSame("Disallow: /path-b\x0d\x0a", (string)$filter->getRecord('b2'));
         $filter = new Filter(['maxRecords' => 0]);
         $this->assertNull($filter->getRecord('a'));
-        $recordSet = $filter->getRecordSet();
-        $this->assertNull($recordSet);
-        //$this->assertNull($recordSet->getNonGroupRecord());
+        $filter->setSource($source);
+        $this->assertNotNull($filter->getRecordSet());
     }
 
     public function testGetValue()

@@ -19,9 +19,6 @@ class Filter
     {
         $this->options = $options + [
             'maxRecords' => 1000,
-            'maxWildcards' => 10,
-            'escapedWildcard' => true, // set true for safety if tester treats '%2A' as a wildcard '*'
-            'complementLeadingSlash' => true,
         ];
     }
 

@@ -12,8 +12,11 @@ class FilterParser extends Parser
     {
         $options += [
             'maxLines' => 1000,
-            'pathMemberRegEx' => '/^(?:Dis)?Allow$/i',
             'keepTrailingSpaces' => false,
+            'maxWildcards' => 10,
+            'escapedWildcard' => true, // default is true for safety for unknown tester may treats '%2A' as a wildcard '*'
+            'complementLeadingSlash' => true,
+            'pathMemberRegEx' => '/^(?:Dis)?Allow$/i',
         ];
         parent::__construct($options);
     }
@@ -21,10 +24,10 @@ class FilterParser extends Parser
     public function getLineIterator(string $source)
     {
         $it = parent::getLineIterator($source);
-        yield from $this->iterableFilter($it);
+        yield from $this->filter($it);
     }
 
-    public function iterableFilter($it)
+    public function filter($it)
     {
         $remLines = $ngRemLines = $this->options['maxLines'];
         foreach ($it as $line) {
