@@ -33,7 +33,6 @@ class TesterTest extends PHPUnit_Framework_TestCase
 
     public function testRules()
     {
-        // TODO:
         $tester = new Tester();
         $source = "User-agent: *\nDisallow: /foo\nDisallow: /foo/bar/baz";
         $tester->setSource($source);
@@ -46,6 +45,64 @@ class TesterTest extends PHPUnit_Framework_TestCase
         $this->assertFalse($tester->isAllowed('/foo/bar/bazqux'));
         $this->assertFalse($tester->isAllowed('/foo/b'));
         $this->assertTrue($tester->isAllowed('/qux/foo/bar/baz'));
+        $source = "User-agent: *\nDisallow: /*.php$";
+        $tester->setSource($source);
+        $this->assertFalse($tester->isAllowed('/foo.php'));
+        $this->assertFalse($tester->isAllowed('/foo/bar.php'));
+        $this->assertTrue($tester->isAllowed('/foo.html'));
+        $this->assertTrue($tester->isAllowed('/foo.php/bar'));
+        $this->assertTrue($tester->isAllowed('/foo.php?bar'));
+        // ranvis/robots-txt-processor-test will be used for more tests
+    }
+
+    public function testThatSetSourceFiltersRecords()
+    {
+        $tester = new Tester();
+        $source = "User-agent: *\nDisallow: /\nUser-agent: Permitted\nDisallow:\nUser-agent: Forbidden\nDisallow: /path";
+        $tester->setUserAgents('Unknown');
+        $tester->setSource($source);
+        $this->assertFalse($tester->isAllowed('/path'));
+        $this->assertFalse($tester->isAllowed('/', 'Permitted', "should not read on setSource"));
+        $tester->setUserAgents('Permitted');
+        $tester->setSource($source);
+        $this->assertTrue($tester->isAllowed('/path'));
+        $this->assertFalse($tester->isAllowed('/path', 'Forbidden'));
+        $this->assertFalse($tester->isAllowed('/', 'Forbidden', "should not read on setSource"));
+        $tester->setUserAgents(false);
+        $this->assertFalse($tester->isAllowed('/path'));
+        $tester->setUserAgents('Forbidden');
+        $tester->setSource($source);
+        $this->assertFalse($tester->isAllowed('/path'));
+        $this->assertFalse($tester->isAllowed('/path', 'Permitted', "should not read on setSource"));
+        $this->assertFalse($tester->isAllowed('/', 'Permitted', "should not read on setSource"));
+        $tester->setUserAgents(['Permitted', 'Forbidden']);
+        $tester->setSource($source);
+        $this->assertTrue($tester->isAllowed('/path'));
+        $this->assertTrue($tester->isAllowed('/path', 'Permitted'));
+        $this->assertFalse($tester->isAllowed('/path', 'Forbidden'));
+        $this->assertFalse($tester->isAllowed('/path', 'Unknown'));
+        $this->assertTrue($tester->isAllowed('/'));
+        $this->assertTrue($tester->isAllowed('/', 'Permitted'));
+        $this->assertTrue($tester->isAllowed('/', 'Forbidden'));
+        $this->assertFalse($tester->isAllowed('/', 'Unknown'));
+    }
+
+    /**
+     * @expectedException \LogicException
+     */
+    public function testThatSetUserAgentsCallClearsSource()
+    {
+        try {
+            $tester = new Tester();
+            $source = "User-agent: *\nDisallow: /";
+            $tester->setUserAgents('Foo');
+            $tester->setSource($source);
+            $this->assertFalse($tester->isAllowed('/foo'));
+        } catch (\LogicException $e) {
+            throw new \UnexpectedValueException("Unexpected throw", 0, $e);
+        }
+        $tester->setUserAgents('Bar');
+        $tester->isAllowed('/foo'); // throws
     }
 
     public function testNormalizePath()
@@ -91,13 +148,13 @@ class TesterTest extends PHPUnit_Framework_TestCase
             $this->markTestSkipped('Incompatible test set version');
             return;
         }
-        $tester = new RobotsTxt\TestRunner();
-        $tester->setTestcases($set);
-        $tester->run(RobotsTxt\Adapter\Ranvis::class, [
+        $runner = new RobotsTxt\TestRunner();
+        $runner->setTestcases($set);
+        $runner->run(RobotsTxt\Adapter\Ranvis::class, [
             'maxValueLength' => 2000,
             'maxWildcards' => 100000000,
         ]);
-        $status = $tester->getStatus();
+        $status = $runner->getStatus();
         $this->assertgreaterThan(0, $status['num']['tests']);
         $this->assertSame(0, $status['num']['failures']);
         $this->assertSame(0, $status['num']['errors']);

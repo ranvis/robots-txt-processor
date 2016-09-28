@@ -19,6 +19,7 @@
 		"php": ">=7.0.0"
 	},
 	"require-dev": {
-        "ranvis/robots-txt-processor-test": "dev-master",
+		"ranvis/robots-txt-processor-test": "dev-master",
+		"phpunit/phpunit": "~5.5"
 	}
 }

@@ -58,6 +58,12 @@ class Tester extends Filter
         $this->setSource($allowed ? '' : "User-agent: *\nDisallow: /");
     }
 
+    public function setUserAgents($userAgents, bool $fallback = true)
+    {
+        parent::setUserAgents($userAgents, $fallback);
+        $this->rules = null;
+    }
+
     public function setSource($source)
     {
         parent::setSource($source);
@@ -75,6 +81,9 @@ class Tester extends Filter
     {
         if ($targetPath[0] != '/') {
             throw new \InvalidArgumentException('Path should be started with slash: ' . $targetPath);
+        }
+        if ($this->recordSet === null) {
+            throw new \LogicException("No source is loaded yet");
         }
         $rules = $this->getPathRules($userAgents);
         $targetPath = $this->normalizePath($targetPath, false);

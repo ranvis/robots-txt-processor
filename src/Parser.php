@@ -44,7 +44,7 @@ class Parser
 
     public function getLineIterator(string $source)
     {
-        $lws = '(?:(?:\x0d\x0a?|\x0a)[ \t]+|[ \t]*)'; // *(LWS-ish | WSP)
+        $lws = '(?:(?:\x0d\x0a?|\x0a)[ \t]+|[ \t]*)'; // [LWS-ish | WSP]
         $maxDirectiveLength = (int)$this->options['maxDirectiveLength'];
         $maxValueLength = (int)$this->options['maxValueLength'];
         $pattern = "/(*ANYCRLF)^[ \t]*(?:(?<field>[A-Za-z-]{1,$maxDirectiveLength})$lws:$lws(?<value>[^\x0d\x0a \t#]*+[^\x0d\x0a#]*?))?(?:[ \t]*#[^\x0d\x0a]*)?(?<end>\x0d\x0a?|\x0a|\z)/m";

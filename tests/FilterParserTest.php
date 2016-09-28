@@ -28,12 +28,12 @@ class FilterParserTest extends PHPUnit_Framework_TestCase
             $this->assertSame($expected, $line ? $line['value'] : null);
             $it->next();
         } else {
-            $it = $parser->filter(array_map(function ($value) use ($getLineType, $field) {
-                return ['type' => $getLineType($field), 'field' => $field, 'value' => $value];
+            $it = $parser->filter(array_map(function ($value) use ($getLineType) {
+                return ['type' => $getLineType($value[0]), 'field' => $value[0], 'value' => $value[1]];
             }, $value));
             while ($expected) {
                 $line = $it->current();
-                $this->assertSame(array_shift($expected), $line ? $line['value'] : null);
+                $this->assertSame(array_shift($expected), $line ? [$line['field'], $line['value']] : null);
                 $it->next();
             }
         }
@@ -44,11 +44,14 @@ class FilterParserTest extends PHPUnit_Framework_TestCase
     {
         return [
             // maxLines
-            [1000, 10, false, true, false, 'Disallow', ['/a', '/b', '/c'], ['/a', '/b', '/c']],
-            [3, 10, false, true, false, 'Disallow', ['/a', '/b', '/c'], ['/a', '/b', '/c']],
-            [2, 10, false, true, false, 'Disallow', ['/a', '/b', '/c'], ['/a', '/b']],
-            [1, 10, false, true, false, 'Disallow', ['/a', '/b', '/c'], ['/a']],
-            [0, 10, false, true, false, 'Disallow', ['/a', '/b', '/c'], []],
+            [1000, 10, false, true, false, null, [['Disallow', '/a'], ['Disallow', '/b'], ['Disallow', '/c']], [['Disallow', '/a'], ['Disallow', '/b'], ['Disallow', '/c']]],
+            [3, 10, false, true, false, null, [['Disallow', '/a'], ['Disallow', '/b'], ['Disallow', '/c']], [['Disallow', '/a'], ['Disallow', '/b'], ['Disallow', '/c']]],
+            [2, 10, false, true, false, null, [['Disallow', '/a'], ['Disallow', '/b'], ['Disallow', '/c']], [['Disallow', '/a'], ['Disallow', '/b']]],
+            [1, 10, false, true, false, null, [['Disallow', '/a'], ['Disallow', '/b'], ['Disallow', '/c']], [['Disallow', '/a']]],
+            [0, 10, false, true, false, null, [['Disallow', '/a'], ['Disallow', '/b'], ['Disallow', '/c']], []],
+            [2, 10, false, true, false, null, [['User-agent', 'a'], ['Disallow', '/a'], ['User-agent', 'b'], ['Disallow', '/b'], ['Disallow', '/c']], [['User-agent', 'a'], ['Disallow', '/a'], ['User-agent', 'b'], ['Disallow', '/b'], ['Disallow', '/c']]],
+            [1, 10, false, true, false, null, [['User-agent', 'a'], ['Disallow', '/a'], ['User-agent', 'b'], ['Disallow', '/b'], ['Disallow', '/c']], [['User-agent', 'a'], ['Disallow', '/a'], ['User-agent', 'b'], ['Disallow', '/b']]],
+            [1, 10, false, true, false, null, [['User-agent', 'a'], ['Disallow', '/a'], ['Disallow', '/b'], ['User-agent', 'b'], ['Disallow', '/c']], [['User-agent', 'a'], ['Disallow', '/a'], ['User-agent', 'b'], ['Disallow', '/c']]],
             // maxWildcards
             [1000, 5, true, true, false, 'Unknown', '*****v****a***l**u*e', '*****v****a***l**u*e'],
             [1000, 4, true, true, false, 'Unknown', '*****v****a***l**u*e', '*****v****a***l**u*e'],

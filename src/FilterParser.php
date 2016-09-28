@@ -29,14 +29,17 @@ class FilterParser extends Parser
 
     public function filter($it)
     {
-        $remLines = $ngRemLines = $this->options['maxLines'];
+        $remLines = [
+            self::TYPE_GROUP => $this->options['maxLines'],
+            self::TYPE_NON_GROUP => $this->options['maxLines'],
+        ];
         foreach ($it as $line) {
+            if (isset($remLines[$line['type']]) && --$remLines[$line['type']] < 0) {
+                continue;
+            }
             if ($line['type'] == self::TYPE_USER_AGENT) {
-                $remLines = $this->options['maxLines'];
+                $remLines[self::TYPE_GROUP] = $this->options['maxLines'];
             } elseif ($line['type'] == self::TYPE_GROUP) {
-                if (--$remLines < 0) {
-                    return;
-                }
                 if (preg_match($this->options['pathMemberRegEx'], $line['field'])) {
                     $path = $line['value'];
                     if ($this->options['escapedWildcard']) {
@@ -55,9 +58,6 @@ class FilterParser extends Parser
                     $line['value'] = $path;
                 }
             } elseif ($line['type'] == self::TYPE_NON_GROUP) {
-                if (--$ngRemLines < 0) {
-                    return;
-                }
             }
             if (!$this->options['keepTrailingSpaces']) {
                 $line['value'] = rtrim($line['value'], "\t ");
