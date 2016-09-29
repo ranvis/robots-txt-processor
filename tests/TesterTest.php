@@ -182,7 +182,7 @@ class TesterTest extends \PHPUnit_Framework_TestCase
         }
         $runner = new TestRunner();
         $runner->setTestcases($set);
-        $runner->run(Adapter\Ranvis::class, [
+        $runner->run(new Adapter\Ranvis(), [
             'maxValueLength' => 2000,
             'maxWildcards' => 100000000,
         ]);
