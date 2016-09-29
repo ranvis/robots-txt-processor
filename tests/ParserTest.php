@@ -4,9 +4,9 @@
  * @license BSD 2-Clause License
  */
 
-use \Ranvis\RobotsTxt\Parser;
+namespace Ranvis\RobotsTxt;
 
-class ParserTest extends PHPUnit_Framework_TestCase
+class ParserTest extends \PHPUnit_Framework_TestCase
 {
     public function testGetRecordIterator()
     {
@@ -123,16 +123,19 @@ class ParserTest extends PHPUnit_Framework_TestCase
 
     public function testRegisterGroupDirective()
     {
-        $tester = new Ranvis\RobotsTxt\Tester();
         $source = "User-agent: crawler\nCrawl-delay: 60\nmy-custom-flag: yes\nmy-custom-value: 30";
-        $filter = new Ranvis\RobotsTxt\FilterParser();
-        $filter->registerGroupDirective('My-custom-flag');
-        $tester->setSource($filter->getRecordIterator($source));
-        $this->assertSame('yes', $tester->getValue('My-custom-flag', 'crawler'));
-        $this->assertSame(null, $tester->getValue('My-custom-flag', 'robot'));
-        $this->assertSame(null, $tester->getValue('my-custom-value', 'crawler'));
-        $recordSet = $tester->getRecordSet();
-        $this->assertSame('30', $recordSet->getNonGroupValue('my-custom-value'));
+        $parser = new FilterParser();
+        $parser->registerGroupDirective('My-custom-flag');
+        $filter = new Filter();
+        $recordSet = $filter->getRecordSet($parser->getRecordIterator($source));
+        $record = $recordSet->getRecord('crawler');
+        $this->assertSame('yes', $record->getValue('My-custom-flag'));
+        $record = $recordSet->getRecord('robot');
+        $this->assertSame(null, $record->getValue('My-custom-flag'));
+        $record = $recordSet->getRecord('crawler');
+        $this->assertSame(null, $record->getValue('my-custom-value'));
+        $record = $recordSet->getNonGroupRecord();
+        $this->assertSame('30', $record->getValue('my-custom-value'));
     }
 
     private function lineIteratorToString($it)

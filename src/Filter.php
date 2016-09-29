@@ -26,7 +26,7 @@ class Filter
      * Filter records on parse by User-agents.
      * Also set default user-agents on getting record.
      *
-     * @param string|array|false $userAgents User-agents to keep, false to reset and keep all
+     * @param string|array|false $userAgents User-agents to keep, false to clear filter to keep all
      * @param bool $fallback True to keep fallback '*' record
      */
     public function setUserAgents($userAgents, bool $fallback = true)
@@ -49,8 +49,9 @@ class Filter
      * Parse robots.txt string
      *
      * @param string|\Traversable $source robots.txt data or record iterator
+     * @return RecordSet Filtered records
      */
-    public function setSource($source)
+    public function getRecordSet($source) : RecordSet
     {
         if (is_string($source)) {
             $parser = new FilterParser($this->options);
@@ -67,90 +68,23 @@ class Filter
                 }
                 break;
             }
-            $this->addRecord($spec);
-        }
-        $nonGroup = $it->getReturn();
-        if ($nonGroup) {
-            $this->recordSet->setNonGroup($nonGroup);
-        }
-    }
-
-    protected function addRecord(array $spec)
-    {
-        foreach ($spec['userAgents'] as $userAgent) {
-            $userAgent = $this->normalizeName($userAgent);
-            if (!$this->targetUserAgents || isset($this->targetUserAgents[$userAgent])) {
-                $this->recordSet->add($userAgent, $spec['record']);
-            }
-        }
-    }
-
-    public function getRecordSet()
-    {
-        // for now...
-        return $this->recordSet;
-    }
-
-    public function getFilteredRecordSet($userAgents = null)
-    {
-        $filteredSet = new RecordSet();
-        $record = $this->getRecord($userAgents);
-        if ($record) {
-            $filteredSet->add('*', $record);
-        }
-        $nonGroupRecord = $this->recordSet->getNonGroupRecord();
-        if ($nonGroupRecord) {
-            $filteredSet->setNonGroup($nonGroupRecord);
-        }
-        return $filteredSet;
-    }
-
-    /**
-     * Get the first value of the directive
-     *
-     * @param string $directive directive name like Crawl-delay
-     * @param string|array|null $userAgents User-agents in order of preference
-     * @return ?string value of the directive
-     */
-    public function getValue(string $directive, $userAgents = null)
-    {
-        $it = $this->getValueIterator($directive, $userAgents);
-        return $it->valid() ? $it->current() : null;
-    }
-
-    public function getValueIterator(string $directive, $userAgents = null)
-    {
-        $record = $this->getRecord($userAgents);
-        if (!$record) {
-            return new \EmptyIterator();
-        }
-        return $record->getValueIterator($directive);
-    }
-
-    /**
-     * Get record for the first specified User-agents or '*'
-     *
-     * @param string|array|null $userAgents User-agents in order of preference
-     * @return Record|null Record of lines
-     */
-    public function getRecord($userAgents = null)
-    {
-        if ($userAgents === null && $this->targetUserAgents !== null) {
-            $userAgents = array_keys($this->targetUserAgents);
-        } else {
-            $userAgents = (array)$userAgents;
-            $userAgents[] = '*';
-        }
-        $record = null;
-        if ($this->recordSet !== null) {
-            foreach ($userAgents as $userAgent) {
-                $record = $this->recordSet->getRecord($userAgent);
-                if ($record !== null) {
-                    break;
+            foreach ($spec['userAgents'] as $userAgent) {
+                $userAgent = $this->normalizeName($userAgent);
+                if (!$this->targetUserAgents || isset($this->targetUserAgents[$userAgent])) {
+                    $this->recordSet->add($userAgent, $spec['record']);
                 }
             }
         }
-        return $record;
+        $ordering = $this->targetUserAgents ? array_flip(array_keys($this->targetUserAgents)) : [];
+        $ordering['*'] = 1000000; // * is latter if targetUserAgents is set
+        $this->recordSet->sort(function ($a, $b) use ($ordering) {
+            return ($ordering[$a] ?? 2000000) <=> ($ordering[$b] ?? 2000000);
+        });
+        $nonGroup = $it->getReturn();
+        if ($nonGroup) {
+            $this->recordSet->setNonGroupRecord($nonGroup);
+        }
+        return $this->recordSet;
     }
 
     private function normalizeName(string $name) : string

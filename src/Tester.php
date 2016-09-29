@@ -6,8 +6,10 @@
 
 namespace Ranvis\RobotsTxt;
 
-class Tester extends Filter
+class Tester
 {
+    private $options;
+    private $recordSet;
     private $rules;
 
     /**
@@ -15,12 +17,11 @@ class Tester extends Filter
      */
     public function __construct(array $options = [])
     {
-        $options += [
+        $this->options = $options + [
             'respectOrder' => false,
             'ignoreForbidden' => false,
             'escapedWildcard' => false,
         ];
-        parent::__construct($options);
     }
 
     /**
@@ -48,7 +49,7 @@ class Tester extends Filter
     }
 
     /**
-     * Set robots.txt source data from response code
+     * Set HTTP response code as a source
      *
      * @param int $code HTTP response code of robots.txt
      */
@@ -58,15 +59,27 @@ class Tester extends Filter
         $this->setSource($allowed ? '' : "User-agent: *\nDisallow: /");
     }
 
-    public function setUserAgents($userAgents, bool $fallback = true)
+    /**
+     * Set robots.txt record to test
+     * @param RecordSet|string $source Source data. If string, it is passed to Filter.
+     * @param string|array|null $userAgents User-agents passed to Filter when $source is a string
+     */
+    public function setSource($source, $userAgents = null)
     {
-        parent::setUserAgents($userAgents, $fallback);
-        $this->rules = null;
-    }
-
-    public function setSource($source)
-    {
-        parent::setSource($source);
+        if ($source instanceof RecordSet) {
+            $source = $source;
+        } else {
+            $filter = new Filter($this->options);
+            if ($userAgents !== null) {
+                $filter->setUserAgents($userAgents);
+                $userAgents = null;
+            }
+            $source = $filter->getRecordSet($source);
+        }
+        if ($userAgents !== null) {
+            throw new \InvalidArgumentException('cannot specify userAgents for this source');
+        }
+        $this->recordSet = $source;
         $this->rules = null;
     }
 
@@ -80,10 +93,7 @@ class Tester extends Filter
     public function isAllowed(string $targetPath, $userAgents = null)
     {
         if ($targetPath[0] != '/') {
-            throw new \InvalidArgumentException('Path should be started with slash: ' . $targetPath);
-        }
-        if ($this->recordSet === null) {
-            throw new \LogicException("No source is loaded yet");
+            throw new \InvalidArgumentException('Path string should begin with slash');
         }
         $rules = $this->getPathRules($userAgents);
         $targetPath = $this->normalizePath($targetPath, false);
@@ -99,7 +109,10 @@ class Tester extends Filter
     {
         $rules = $this->rules;
         if ($rules === null || $userAgents !== null) {
-            $it = $this->getRecord($userAgents);
+            if ($this->recordSet === null) {
+                throw new \LogicException("No source is loaded yet");
+            }
+            $it = $this->recordSet->getRecord($userAgents);
             $rules = [];
             foreach ($it ?: [] as $rule) {
                 $field = lcfirst($rule['field']);

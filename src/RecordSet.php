@@ -18,29 +18,66 @@ class RecordSet
 
     public function add(string $userAgent, $record)
     {
-        $this->records[$userAgent] = $record;
+        $this->records[self::normalizeName($userAgent)] = $record;
     }
 
-    public function setNonGroup($record)
+    public function setNonGroupRecord($record)
     {
         $this->records[self::NON_GROUP_KEY] = $record;
     }
 
-    /**
-     * Get record for the specific User-agent
-     *
-     * @param string $userAgent User-agent
-     * @return Record|null Rules
-     */
-    public function getRecord(string $userAgent)
+    public function extract($userAgents = null) : RecordSet
     {
-        $userAgent = self::normalizeName($userAgent);
-        return $this->records[$userAgent] ?? null;
+        $filteredSet = new static();
+        $record = $this->getRecord($userAgents, false);
+        if ($record) {
+            $filteredSet->add('*', $record);
+        }
+        $nonGroupRecord = $this->getNonGroupRecord(false);
+        if ($nonGroupRecord) {
+            $filteredSet->setNonGroupRecord($nonGroupRecord);
+        }
+        return $filteredSet;
     }
 
-    public function getNonGroupRecord()
+    /**
+     * Get record for the first specified User-agents or '*'
+     *
+     * @param string|array|null $userAgents User-agents in order of preference
+     * @paran bool $dummy true to return dummy Record instead of null
+     * @return Record|null Record of lines
+     */
+    public function getRecord($userAgents = null, bool $dummy = true)
     {
-        return $this->getRecord(self::NON_GROUP_KEY);
+        if ($userAgents === null) {
+            $userAgents = array_filter(array_keys($this->records), function ($userAgent) {
+                return $userAgent !== self::NON_GROUP_KEY;
+            });
+        } else {
+            $userAgents = (array)$userAgents;
+            $userAgents[] = '*';
+        }
+        $record = null;
+        foreach ($userAgents as $userAgent) {
+            $userAgent = self::normalizeName($userAgent);
+            $record = $this->records[$userAgent] ?? null;
+            if ($record !== null) {
+                break;
+            }
+        }
+        if ($record === null && $dummy) {
+            $record = new Record();
+        }
+        return $record;
+    }
+
+    public function getNonGroupRecord(bool $dummy = true)
+    {
+        $record = $this->records[self::NON_GROUP_KEY] ?? null;
+        if ($record === null && $dummy) {
+            $record = new Record();
+        }
+        return $record;
     }
 
     public function __toString()
@@ -59,25 +96,9 @@ class RecordSet
         return implode("\x0d\x0a", $textRecords);
     }
 
-    /**
-     * Get non-group directive value
-     *
-     * @param string $directive Name of the directive
-     * @return ?string The first value of the directive or null if not defined
-     */
-    public function getNonGroupValue(string $directive)
+    public function sort(Callable $cmpProc)
     {
-        $it = $this->getNonGroupValueIterator($directive);
-        return $it->current();
-    }
-
-    public function getNonGroupValueIterator(string $directive)
-    {
-        $record = $this->getNonGroupRecord();
-        if (!$record) {
-            return new \EmptyIterator();
-        }
-        return $record->getValueIterator($directive);
+        uksort($this->records, $cmpProc);
     }
 
     public static function normalizeName(string $name) : string

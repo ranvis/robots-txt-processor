@@ -4,9 +4,9 @@
  * @license BSD 2-Clause License
  */
 
-use Ranvis\RobotsTxt\FilterParser;
+namespace Ranvis\RobotsTxt;
 
-class FilterParserTest extends PHPUnit_Framework_TestCase
+class FilterParserTest extends \PHPUnit_Framework_TestCase
 {
     /**
      * @dataProvider getTestOptionEscapedWildcardData
@@ -21,7 +21,7 @@ class FilterParserTest extends PHPUnit_Framework_TestCase
             'keepTrailingSpaces' => $ktsFlag,
             'pathMemberRegEx' => '/^(?:Dis)?Allow$/i',
         ]);
-        $getLineType = (new ReflectionMethod($parser, 'getLineType'))->getClosure($parser);
+        $getLineType = getInstanceMethod($parser, 'getLineType');
         if (!is_array($value)) {
             $it = $parser->filter([['type' => $getLineType($field), 'field' => $field, 'value' => $value]]);
             $line = $it->current();

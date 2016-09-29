@@ -33,9 +33,21 @@ class Record implements \IteratorAggregate
         return new \ArrayIterator($this->lines);
     }
 
-    public static function lineToString(array $line)
+    protected static function lineToString(array $line)
     {
         return $line['field'] . ': ' . $line['value'] . "\x0d\x0a";
+    }
+
+    /**
+     * Get the first value of the directive
+     *
+     * @param string $directive directive name like Crawl-delay
+     * @return ?string value of the directive
+     */
+    public function getValue(string $directive)
+    {
+        $it = $this->getValueIterator($directive);
+        return $it->valid() ? $it->current() : null;
     }
 
     public function getValueIterator(string $directive)
@@ -47,5 +59,4 @@ class Record implements \IteratorAggregate
             }
         }
     }
-
 }
