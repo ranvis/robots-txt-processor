@@ -65,8 +65,6 @@ See [EXAMPLES.md](EXAMPLES.md) for more examples.
 
 ### Setting user-agents
 
-There's shorthand way of passing source to tester.
-
 When setting source, you can (optionally) pass user-agents like the examples above.
 If you pass a user-agent string or an array of string, subsequent `Filter` will filter out unspecified user-agent records (aside from `*`.)
 While `Tester->isAllowed()` accepts user-agents, it should run faster to filter (with `Filter->setUserAgents()` or `Tester->setSource(source, userAgents)`) and call `Tester->isAllowed()` multiple times without specifying user-agents.
@@ -143,8 +141,8 @@ Normally, the default values should suffice to filter potentially offensive inpu
 
 - `'escapedWildcard' => true,`
 
-  If true, `%2A` in path line is treated as wildcard `*` and will be a subject to the limitation.
-  Don't set to false unless you are sure your tester doesn't treat `%2A` that way.
+  If true, `%2A` in path line is treated as wildcard `*` and will be a subject to the limitation of `maxWildcards`.
+  Don't set to false unless you are sure that your tester doesn't treat `%2A` that way.
   (listed as PeDecodeWildcard in [feature test table](https://github.com/ranvis/robots-txt-processor-test/wiki/Features))
 
 - `'complementLeadingSlash' => true,`

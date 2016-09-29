@@ -70,7 +70,7 @@ Here uses `iterator_to_array()` for illustration purpose. You can of course pass
 Using custom directive is a little complex.
 Instantiate `FilterParser`, register your directive with `registerGroupDirective()`, then feed `getRecordIterator()` result as a filter source.
 Once you obtain a record with `getNonGroupRecord()`, you get values with `getValue()` or `getValueIterator()`.
-If you haven't register, unknown directives are treated as non-group directive (see the next example).
+If you haven't register, unknown directives are treated as non-group directive (see the next example.)
 
 ```php
 $source = <<<'END'
