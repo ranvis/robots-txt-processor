@@ -1,5 +1,28 @@
 # robots.txt filter and tester for untrusted source
 
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+
+
+- [Introduction](#introduction)
+- [License](#license)
+- [Installation](#installation)
+- [Example Usage](#example-usage)
+- [Implementation Notes](#implementation-notes)
+  - [Setting user-agents](#setting-user-agents)
+  - [Record separator](#record-separator)
+  - [Case sensitivity](#case-sensitivity)
+  - [Encoding conversion](#encoding-conversion)
+  - [Features](#features)
+- [Options](#options)
+  - [`Tester` class options](#tester-class-options)
+  - [`Filter` class options](#filter-class-options)
+  - [`FilterParser` class options](#filterparser-class-options)
+  - [`Parser` class options](#parser-class-options)
+- [Interface](#interface)
+
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
+
 ## Introduction
 
 robots-txt-processor is a tester with a filter for natural wild robots.txt data of the Internet.
@@ -10,14 +33,14 @@ The module can filter like:
 - Paths that contains too many wildcards
 - Comments (inline or the while line)
 
-Also, filter/tester can for example:
+Also, it can for example:
 
 - Parse line continuation (LWS,) although not used widely
-- Allow/Disallow test for paths containing meta character (tester)
 - Identify misspelled "Useragent" directive
 - Complement missing leading slash in a path
 
-Alternatively, you can use only the input filter and feed an output to another module as a single "User-agent: *" record with a non-group record.
+Tester module can process Allow/Disallow directives containing */$ meta characters.
+Alternatively, you can use only the filter module and feed an output to another tester module as a single "User-agent: *" record with a non-group record.
 
 ## License
 
@@ -58,7 +81,7 @@ $tester->setSource($recordSet);
 var_dump($tester->isAllowed('/path.php')); // false
 ```
 
-See [EXAMPLES.md](EXAMPLES.md) for more examples.
+See [EXAMPLES.md](EXAMPLES.md) for more examples, including filter-only usage.
 
 
 ## Implementation Notes
@@ -83,7 +106,7 @@ This parser ignores blank lines. Another record starts on User-agent lines after
 This filter/tester themselves don't handle encoding conversion because it isn't needed.
 If a remote robots.txt uses some non-Unicode (specifically not UTF-8) encoding, URL path should be in that encoding too.
 The filter/tester work with any character or percent-encoded sequence which can result in invalid UTF-8 safely.
-Exception will be when a remote robots.txt uses any Unicode encoding with BOM. If this will ever happen, you will need to convert it to UTF-8 (without BOM) beforehand.
+An exception is when a remote robots.txt uses any Unicode encoding with BOM. If this will ever happen, you will need to convert it to UTF-8 (without BOM) beforehand.
 
 ### Features
 
