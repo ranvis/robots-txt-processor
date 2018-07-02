@@ -40,7 +40,7 @@ Also, it can for example:
 - Complement missing leading slash in a path
 
 Tester module can process Allow/Disallow directives containing */$ meta characters.
-Alternatively, you can use only the filter module and feed an output to another tester module as a single "User-agent: *" record with a non-group record.
+Alternatively, you can use the filter module alone and feed an output to another tester module as a single "User-agent: *" record with a non-group record.
 
 ## License
 
@@ -140,8 +140,8 @@ Normally, the default values should suffice to filter potentially offensive inpu
 
   Maximum number of records (grouped rules) to parse.
   Any records thereafter will not be kept.
-  Don't set too low or filter will give up before your user-agent.
-  This limitation is only for parsing. Calling `setUserAgents()` limits what user-agent to keep.
+  Don't set too low or filter will give up before your user-agents.
+  This limitation is only for parsing. Calling `setUserAgents()` limits what user-agents to keep.
 
 `Filter->getRecordSet(string)` internally instantiates `FilterParser` with initially passed options.
 
@@ -154,7 +154,7 @@ Normally, the default values should suffice to filter potentially offensive inpu
 
 - `'keepTrailingSpaces' => false,`
 
-  If true, trailing spaces (including tabs) of line without comment is trimmed. For lines with comment, spaces before # are always trimmed.
+  If false, trailing spaces (including tabs) of line without comment is trimmed. For lines with comment, spaces before # are always trimmed.
   Retaining spaces is the requirement of both robotstxt.org and Google specs.
 
 - `'maxWildcards' => 10,`
@@ -193,12 +193,12 @@ Normally, the default values should suffice to filter potentially offensive inpu
 - `'maxNameLength' => 200,`
 
   Maximum number of characters for the `User-agent` value.
-  Any user-agent name longer than this is truncated.
+  Any user-agent names longer than this is truncated.
 
 - `'maxValueLength' => 2000,`
 
   Maximum number of characters for the directive value.
-  Any values longer than this will be changed to `-ignored-` directive with the value as an original value length.
+  Any values longer than this will be changed to `-ignored-` directive with a value containing the original value length.
 
 - `'userAgentRegEx' => '/^User-?agent$/i',`
 
