@@ -75,14 +75,14 @@ var_dump(iterator_to_array($record->getValueIterator('crawl-delay')));
 // }
 ```
 
-Here uses `iterator_to_array()` for illustration purpose. You can of course pass it to `foreach`.
+Here uses `iterator_to_array()` for an illustration purpose. You can of course pass it directly to `foreach`.
 
 ## Getting custom values tied to user-agent
 
-Using custom directive is a little complex.
+Using a custom directive is a little complex.
 Instantiate `FilterParser`, register your directive with `registerGroupDirective()`, then feed `getRecordIterator()` result as a filter source.
-Once you obtain a record with `getNonGroupRecord()`, you get values with `getValue()` or `getValueIterator()`.
-If you haven't register, unknown directives are treated as non-group directive (see the next example.)
+Once you obtain a record with `getRecord()`, you get values with `getValue()` or `getValueIterator()`.
+If you haven't registered, unknown directives are treated as non-group directive (see the next example.)
 
 ```php
 $source = <<<'END'
@@ -136,7 +136,7 @@ var_dump(iterator_to_array($record->getValueIterator('Clean-param'), false));
 
 ## Prefilter of a random robots.txt module
 
-You can let `Tester` class alone and combine `Filter` class with another tester class.
+You can let `Tester` class be alone and combine `Filter` class with an external tester class.
 Below example uses `Filter` to work in conjunction with `diggin/diggin-robotrules`.
 
 ```php

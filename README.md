@@ -31,7 +31,7 @@ The module can filter like:
 - Rules for other User-agents
 - Rules that are too long
 - Paths that contains too many wildcards
-- Comments (inline or the while line)
+- Comments (inline or the whole line)
 
 Also, it can for example:
 
@@ -40,7 +40,7 @@ Also, it can for example:
 - Complement missing leading slash in a path
 
 Tester module can process Allow/Disallow directives containing */$ meta characters.
-Alternatively, you can use the filter module alone and feed an output to another tester module as a single "User-agent: *" record with a non-group record.
+Alternatively, you can use the filter module alone and feed an output to another tester module as a single "User-agent: *" record with a non-group record (e.g. Sitemap.)
 
 ## License
 
@@ -89,12 +89,13 @@ See [EXAMPLES.md](EXAMPLES.md) for more examples, including filter-only usage.
 ### Setting user-agents
 
 When setting source, you can (optionally) pass user-agents like the examples above.
-If you pass a user-agent string or an array of string, subsequent `Filter` will filter out unspecified user-agent records (aside from `*`.)
+If you pass a user-agent string or an array of strings, subsequent `Filter` will filter out unspecified user-agent records (aside from `*`.)
 While `Tester->isAllowed()` accepts user-agents, it should run faster to filter (with `Filter->setUserAgents()` or `Tester->setSource(source, userAgents)`) and call `Tester->isAllowed()` multiple times without specifying user-agents.
+(When an array of user-agent strings is passed, a user-agent specified earlier takes precedence when testing.)
 
 ### Record separator
 
-This parser ignores blank lines. Another record starts on User-agent lines after group member lines.
+This parser ignores blank lines. Another record starts on User-agent lines after group member lines (i.e. Disallow/Allow.)
 
 ### Case sensitivity
 
@@ -105,7 +106,7 @@ This parser ignores blank lines. Another record starts on User-agent lines after
 
 This filter/tester themselves don't handle encoding conversion because it isn't needed.
 If a remote robots.txt uses some non-Unicode (specifically not UTF-8) encoding, URL path should be in that encoding too.
-The filter/tester work with any character or percent-encoded sequence which can result in invalid UTF-8 safely.
+The filter/tester safely work with any character or percent-encoded sequence which can result in invalid UTF-8.
 An exception is when a remote robots.txt uses any Unicode encoding with BOM. If this will ever happen, you will need to convert it to UTF-8 (without BOM) beforehand.
 
 ### Features
@@ -165,7 +166,7 @@ Normally, the default values should suffice to filter potentially offensive inpu
 - `'escapedWildcard' => true,`
 
   If true, `%2A` in path line is treated as wildcard `*` and will be a subject to the limitation of `maxWildcards`.
-  Don't set to false unless you are sure that your tester doesn't treat `%2A` that way.
+  When using an external tester, don't set to false unless you are sure that your tester doesn't treat `%2A` that way.
   (listed as PeDecodeWildcard in [feature test table](https://github.com/ranvis/robots-txt-processor-test/wiki/Features))
 
 - `'complementLeadingSlash' => true,`
@@ -174,7 +175,7 @@ Normally, the default values should suffice to filter potentially offensive inpu
 
 - `'pathMemberRegEx' => '/^(?:Dis)?Allow$/i',`
 
-  Values of the directives matching this regex is treated as a path and configurations like `maxWildcards` are applied.
+  A value of a directive matching this regex is treated as a path and configurations like `maxWildcards` are applied.
 
 `FilterParser` extends `Parser` class.
 
@@ -193,7 +194,7 @@ Normally, the default values should suffice to filter potentially offensive inpu
 - `'maxNameLength' => 200,`
 
   Maximum number of characters for the `User-agent` value.
-  Any user-agent names longer than this is truncated.
+  Any user-agent names longer than this are truncated.
 
 - `'maxValueLength' => 2000,`
 
@@ -202,7 +203,7 @@ Normally, the default values should suffice to filter potentially offensive inpu
 
 - `'userAgentRegEx' => '/^User-?agent$/i',`
 
-  Directives matching this regex is treated as User-agent.
+  A directive matching this regex is treated as a User-agent.
 
 
 ## Interface
