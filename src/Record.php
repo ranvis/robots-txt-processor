@@ -28,7 +28,7 @@ class Record implements \IteratorAggregate
         return $result;
     }
 
-    public function getIterator()
+    public function getIterator(): \Traversable
     {
         return new \ArrayIterator($this->lines);
     }
