@@ -6,12 +6,12 @@
 
 namespace Ranvis\RobotsTxt;
 
-class FilterParserTest extends \PHPUnit_Framework_TestCase
+class FilterParserTest extends \PHPUnit\Framework\TestCase
 {
     /**
      * @dataProvider getTestOptionEscapedWildcardData
      */
-    public function testOptionEscapedWildcard($maxL, $maxW, $ewFlag, $clsFlag, $ktsFlag, $field, $value, $expected)
+    public function testOptionEscapedWildcard($maxL, $maxW, $ewFlag, $clsFlag, $ktsFlag, $field, $value, $expected): void
     {
         $parser = new FilterParser([
             'maxLines' => $maxL,

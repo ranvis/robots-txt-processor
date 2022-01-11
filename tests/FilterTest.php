@@ -6,12 +6,12 @@
 
 namespace Ranvis\RobotsTxt;
 
-class FilterTest extends \PHPUnit_Framework_TestCase
+class FilterTest extends \PHPUnit\Framework\TestCase
 {
     /**
      * @dataProvider getTestSetUserAgentsData
      */
-    public function testSetUserAgents($filterArgs, $target, $expected)
+    public function testSetUserAgents($filterArgs, $target, $expected): void
     {
         $filter = new Filter();
         $filter->setUserAgents(...$filterArgs);
@@ -44,7 +44,7 @@ class FilterTest extends \PHPUnit_Framework_TestCase
         ];
     }
 
-    public function testGetRecordSet()
+    public function testGetRecordSet(): void
     {
         $filter = new Filter();
         $recordSet = $filter->getRecordSet('');
@@ -58,7 +58,7 @@ class FilterTest extends \PHPUnit_Framework_TestCase
     /**
      * @dataProvider getTestGetNonGroupRecordData
      */
-    public function testGetNonGroupRecord($source, $expected)
+    public function testGetNonGroupRecord($source, $expected): void
     {
         $filter = new Filter();
         $recordSet = $filter->getRecordSet($source);
@@ -81,7 +81,7 @@ class FilterTest extends \PHPUnit_Framework_TestCase
         ];
     }
 
-    public function testOptionMaxRecords()
+    public function testOptionMaxRecords(): void
     {
         $source = "User-agent: a\nDisallow: /path-a\n\nUser-agent: b\nUser-agent: b2\nDisallow: /path-b\n\nUser-agent: c\nDisallow: /path-c";
         $filter = new Filter(['maxRecords' => 1000]);
@@ -100,7 +100,7 @@ class FilterTest extends \PHPUnit_Framework_TestCase
         $this->assertNotNull($recordSet);
     }
 
-    public function testGetValue()
+    public function testGetValue(): void
     {
         $filter = new Filter();
         $source = "User-agent: *\nDisallow: /\nCrawl-delay: 30\nCrawl-delay: 60\nCrawl-delay: 90";
@@ -109,7 +109,7 @@ class FilterTest extends \PHPUnit_Framework_TestCase
         $this->assertSame('30', $record->getValue('CRAWL-DELAY'));
     }
 
-    public function testWithNonGroupValue()
+    public function testWithNonGroupValue(): void
     {
         $filter = new Filter();
         $source = "User-agent: *\nDisallow: /\nSitemap: foo\n\nSitemap: bar\nSitemap: baz";
@@ -117,7 +117,7 @@ class FilterTest extends \PHPUnit_Framework_TestCase
         $this->assertSame('foo', $record->getValue('sitemap'));
     }
 
-    public function testWithNonGroupValueIterator()
+    public function testWithNonGroupValueIterator(): void
     {
         $filter = new Filter();
         $source = "User-agent: *\nDisallow: /\nSitemap: foo\n\nSitemap: bar\nSitemap: baz";

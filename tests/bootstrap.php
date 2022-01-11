@@ -6,8 +6,7 @@
 
 namespace Ranvis\RobotsTxt;
 
-$loader = require_once(__DIR__ . '/../vendor/autoload.php');
-$loader->addPsr4('Ranvis\RobotsTxt\\', __DIR__);
+require_once __DIR__ . '/../vendor/autoload.php';
 
 function getInstanceMethod($instance, string $method) : Callable
 {

@@ -6,15 +6,16 @@
 
 namespace Ranvis\RobotsTxt;
 
-class ParserTest extends \PHPUnit_Framework_TestCase
+class ParserTest extends \PHPUnit\Framework\TestCase
 {
-    public function testGetRecordIterator()
+    public function testGetRecordIterator(): void
     {
         $parser = new Parser();
         $it = $parser->getRecordIterator("User-agent: abc\nUser-agent:def\nDisallow: path");
         $this->assertSame(['abc', 'def'], $it->current()['userAgents']);
         $this->assertSame("Disallow: path\x0d\x0a", (string)$it->current()['record']);
-        $this->assertNull($it->next());
+        $it->next();
+        $this->assertNull($it->current());
         $it = $parser->getRecordIterator("User-agent: 001\nUser-agent:1\nUser-agent: 00\nDisallow: path");
         $this->assertSame(['001', '1', '00'], $it->current()['userAgents'], "Numeric user-agent strings");
     }
@@ -31,12 +32,12 @@ class ParserTest extends \PHPUnit_Framework_TestCase
     /**
      * @dataProvider getTestOptionMaxUserAgentsData
      */
-    public function testOptionMaxUserAgents($max, $expected)
+    public function testOptionMaxUserAgents($max, $expected): void
     {
         $source = "User-agent: a\nUser-agent: b\nUser-agent: c\nallow:data";
         $parser = new Parser(['maxUserAgents' => $max]);
         $it = $parser->getRecordIterator($source);
-        $userAgents = $it->current()['userAgents'];
+        $userAgents = $it->current()['userAgents'] ?? null;
         $this->assertSame($expected, $userAgents);
     }
 
@@ -53,7 +54,7 @@ class ParserTest extends \PHPUnit_Framework_TestCase
     /**
      * @dataProvider getTestOptionMaxNameLengthData
      */
-    public function testOptionMaxNameLength($max, $expected)
+    public function testOptionMaxNameLength($max, $expected): void
     {
         $source = "User-agent: abc\nUser-agent: abcde\nUser-agent: abcd\nallow:data";
         $parser = new Parser(['maxNameLength' => $max]);
@@ -76,7 +77,7 @@ class ParserTest extends \PHPUnit_Framework_TestCase
     /**
      * @dataProvider getTestOptionMaxValueLengthData
      */
-    public function testOptionMaxValueLength($max, $source, $expected)
+    public function testOptionMaxValueLength($max, $source, $expected): void
     {
         $parser = new Parser(['maxValueLength' => $max]);
         $this->assertSame($expected, $this->lineIteratorToString($parser->getLineIterator($source)));
@@ -98,7 +99,7 @@ class ParserTest extends \PHPUnit_Framework_TestCase
     /**
      * @dataProvider getEolData
      */
-    public function testEolAndLws($nl)
+    public function testEolAndLws($nl): void
     {
         $parser = new Parser();
         $source = "User-agent\n \t:\n \ta\nDisallow\n \t :\n /";
@@ -121,7 +122,7 @@ class ParserTest extends \PHPUnit_Framework_TestCase
         ];
     }
 
-    public function testRegisterGroupDirective()
+    public function testRegisterGroupDirective(): void
     {
         $source = "User-agent: crawler\nCrawl-delay: 60\nmy-custom-flag: yes\nmy-custom-value: 30";
         $parser = new FilterParser();

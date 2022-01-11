@@ -6,9 +6,9 @@
 
 namespace Ranvis\RobotsTxt;
 
-class TesterTest extends \PHPUnit_Framework_TestCase
+class TesterTest extends \PHPUnit\Framework\TestCase
 {
-    public function testIsResponseCodeAllowed()
+    public function testIsResponseCodeAllowed(): void
     {
         $instance = new Tester(['ignoreForbidden' => false]);
         $this->assertTrue($instance->isResponseCodeAllowed(200)); // OK
@@ -30,7 +30,7 @@ class TesterTest extends \PHPUnit_Framework_TestCase
         $this->assertFalse($instance->isResponseCodeAllowed(503)); // Service Unavailable
     }
 
-    public function testSetResponseCode()
+    public function testSetResponseCode(): void
     {
         $tester = new Tester();
         $allowAll = "User-agent: *\nDisallow: ";
@@ -42,7 +42,7 @@ class TesterTest extends \PHPUnit_Framework_TestCase
         $this->assertFalse($tester->isAllowed('/'));
     }
 
-    public function testRules()
+    public function testRules(): void
     {
         $tester = new Tester();
         $source = "User-agent: *\nDisallow: /foo\nDisallow: /foo/bar/baz";
@@ -66,7 +66,7 @@ class TesterTest extends \PHPUnit_Framework_TestCase
         // ranvis/robots-txt-processor-test will be used for more tests
     }
 
-    public function testThatSetSourceFiltersRecords()
+    public function testThatSetSourceFiltersRecords(): void
     {
         $tester = new Tester();
         $source = "User-agent: *\nDisallow: /\nUser-agent: Permitted\nDisallow:\nUser-agent: Forbidden\nDisallow: /path";
@@ -100,10 +100,7 @@ class TesterTest extends \PHPUnit_Framework_TestCase
         $this->assertFalse($tester->isAllowed('/', 'Unknown'));
     }
 
-    /**
-     * @expectedException \InvalidArgumentException
-     */
-    public function testThatSetSourceWithRecordSetAndUaThrows()
+    public function testThatSetSourceWithRecordSetAndUaThrows(): void
     {
         try {
             $tester = new Tester();
@@ -113,29 +110,26 @@ class TesterTest extends \PHPUnit_Framework_TestCase
         } catch (\InvalidArgumentException $e) {
             throw new \UnexpectedValueException("Unexpected throw", 0, $e);
         }
+        $this->expectException(\InvalidArgumentException::class);
         $tester->setSource(new RecordSet(), 'Foo'); // throws
     }
 
-    /**
-     * @expectedException \InvalidArgumentException
-     */
-    public function testThatIsAllowedNeedsValidPath()
+    public function testThatIsAllowedNeedsValidPath(): void
     {
         $tester = new Tester();
         $tester->setSource("User-agent: *\nDisallow:");
+        $this->expectException(\InvalidArgumentException::class);
         $tester->isAllowed('foo'); // throws
     }
 
-    /**
-     * @expectedException \LogicException
-     */
-    public function testThatIsAllowedNeedsSource()
+    public function testThatIsAllowedNeedsSource(): void
     {
         $tester = new Tester();
+        $this->expectException(\LogicException::class);
         $tester->isAllowed('/foo'); // throws
     }
 
-    public function testWithUnknownDirective()
+    public function testWithUnknownDirective(): void
     {
         $record = new Record();
         $record->addLine(toLine('Foo', '/'));
@@ -146,7 +140,7 @@ class TesterTest extends \PHPUnit_Framework_TestCase
         $this->assertTrue($tester->isAllowed('/'));
     }
 
-    public function testNormalizePath()
+    public function testNormalizePath(): void
     {
         $instance = new Tester();
         $method = getInstanceMethod($instance, 'normalizePath');
@@ -155,7 +149,7 @@ class TesterTest extends \PHPUnit_Framework_TestCase
         $this->assertSame('/%00%01%02%03', $method("/\x00\x01\x02\x03", false));
     }
 
-    public function testCompactRules()
+    public function testCompactRules(): void
     {
         $instance = new Tester();
         $method = getInstanceMethod($instance, 'compactRules');
@@ -169,7 +163,7 @@ class TesterTest extends \PHPUnit_Framework_TestCase
 
     // TODO: respectOrder option
 
-    public function testTestcaseSet()
+    public function testTestcaseSet(): void
     {
         if (!class_exists(TestcaseSet::class)) {
             $this->markTestSkipped('Test set module is not installed');

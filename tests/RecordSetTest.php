@@ -6,9 +6,9 @@
 
 namespace Ranvis\RobotsTxt;
 
-class RecordSetTest extends \PHPUnit_Framework_TestCase
+class RecordSetTest extends \PHPUnit\Framework\TestCase
 {
-    public function testNonGroupRecord()
+    public function testNonGroupRecord(): void
     {
         $recordSet = new RecordSet();
         $this->assertNull($recordSet->getNonGroupRecord(false));
@@ -23,7 +23,7 @@ class RecordSetTest extends \PHPUnit_Framework_TestCase
         $this->assertSame('ok', $record->getValueIterator('Test')->current());
     }
 
-    public function testExtract()
+    public function testExtract(): void
     {
         $record = new StringRecord(['string' => '<1>']);
         $record2 = new StringRecord(['string' => '<2>']);

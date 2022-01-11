@@ -15,11 +15,15 @@
 			"Ranvis\\RobotsTxt\\": "src/"
 		}
 	},
+	"autoload-dev": {
+		"psr-4": {
+			"Ranvis\\RobotsTxt\\": "tests/"
+		}
+	},
 	"require": {
 		"php": ">=7.0.0"
 	},
 	"require-dev": {
-		"ranvis/robots-txt-processor-test": "dev-master",
-		"phpunit/phpunit": "~5.5"
+		"ranvis/robots-txt-processor-test": "dev-master"
 	}
 }
