@@ -58,6 +58,7 @@ class FilterParser extends Parser
                     $line['value'] = $path;
                 }
             } elseif ($line['type'] == self::TYPE_NON_GROUP) {
+                // do nothing
             }
             if (!$this->options['keepTrailingSpaces']) {
                 $line['value'] = rtrim($line['value'], "\t ");

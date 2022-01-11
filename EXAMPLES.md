@@ -12,7 +12,7 @@ require_once __DIR__ . '/vendor/autoload.php';
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 
 
-- [Testing if a path is allowed to crawl](#testing-if-a-path-is-allowed-to-crawl)
+- [Testing if a path is allowed crawling](#testing-if-a-path-is-allowed-crawling)
 - [Getting values like `Crawl-delay`](#getting-values-like-crawl-delay)
 - [Getting custom values tied to user-agent](#getting-custom-values-tied-to-user-agent)
 - [Getting non-group values like `Sitemap`](#getting-non-group-values-like-sitemap)
@@ -20,7 +20,7 @@ require_once __DIR__ . '/vendor/autoload.php';
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
-## Testing if a path is allowed to crawl
+## Testing if a path is allowed crawling
 
 ```php
 $source = <<<'END'

@@ -28,7 +28,7 @@ class RecordSetTest extends \PHPUnit\Framework\TestCase
         $record = new StringRecord(['string' => '<1>']);
         $record2 = new StringRecord(['string' => '<2>']);
         $ngRecord = new StringRecord(['string' => '<N>']);
-        $recordSet = new RecordSet;
+        $recordSet = new RecordSet();
         $this->assertSame('', (string)$recordSet->extract());
         $recordSet->setNonGroupRecord($ngRecord);
         $this->assertSame(nlToCrlf("<N>"), (string)$recordSet->extract());

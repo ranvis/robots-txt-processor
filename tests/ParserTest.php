@@ -132,9 +132,9 @@ class ParserTest extends \PHPUnit\Framework\TestCase
         $record = $recordSet->getRecord('crawler');
         $this->assertSame('yes', $record->getValue('My-custom-flag'));
         $record = $recordSet->getRecord('robot');
-        $this->assertSame(null, $record->getValue('My-custom-flag'));
+        $this->assertNull($record->getValue('My-custom-flag'));
         $record = $recordSet->getRecord('crawler');
-        $this->assertSame(null, $record->getValue('my-custom-value'));
+        $this->assertNull($record->getValue('my-custom-value'));
         $record = $recordSet->getNonGroupRecord();
         $this->assertSame('30', $record->getValue('my-custom-value'));
     }

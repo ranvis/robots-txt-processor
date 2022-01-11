@@ -26,7 +26,7 @@ class Tester
 
     /**
      * @param int $code HTTP response code of robots.txt
-     * @return bool True if allowed to crawl
+     * @return bool True if allowed crawling
      */
     public function isResponseCodeAllowed(int $code)
     {
@@ -84,11 +84,11 @@ class Tester
     }
 
     /**
-     * Test if the path is allowed to crawl
+     * Test if the path is allowed crawling
      *
-     * @param string $path URL path to test
+     * @param string $targetPath URL path to test
      * @param string|array|null $userAgents User-agents in order of preference
-     * @return bool true if allowed to crawl
+     * @return bool true if allowed crawling
      */
     public function isAllowed(string $targetPath, $userAgents = null)
     {

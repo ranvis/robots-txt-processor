@@ -74,20 +74,20 @@ class TesterTest extends \PHPUnit\Framework\TestCase
         $filter->setUserAgents('Unknown');
         $tester->setSource($filter->getRecordSet($source));
         $this->assertFalse($tester->isAllowed('/path'));
-        $this->assertFalse($tester->isAllowed('/', 'Permitted', "should not read on setSource"));
+        $this->assertFalse($tester->isAllowed('/', 'Permitted'), "should not read on setSource");
         $filter->setUserAgents('Permitted');
         $tester->setSource($filter->getRecordSet($source));
         $this->assertTrue($tester->isAllowed('/path'));
         $this->assertFalse($tester->isAllowed('/path', 'Forbidden'));
-        $this->assertFalse($tester->isAllowed('/', 'Forbidden', "should not read on setSource"));
+        $this->assertFalse($tester->isAllowed('/', 'Forbidden'), "should not read on setSource");
         $filter->setUserAgents(false);
         $tester->setSource($filter->getRecordSet($source));
         $this->assertFalse($tester->isAllowed('/path'));
         $filter->setUserAgents('Forbidden');
         $tester->setSource($filter->getRecordSet($source));
         $this->assertFalse($tester->isAllowed('/path'));
-        $this->assertFalse($tester->isAllowed('/path', 'Permitted', "should not read on setSource"));
-        $this->assertFalse($tester->isAllowed('/', 'Permitted', "should not read on setSource"));
+        $this->assertFalse($tester->isAllowed('/path', 'Permitted'), "should not read on setSource");
+        $this->assertFalse($tester->isAllowed('/', 'Permitted'), "should not read on setSource");
         $filter->setUserAgents(['Permitted', 'Forbidden']);
         $tester->setSource($filter->getRecordSet($source));
         $this->assertTrue($tester->isAllowed('/path'));
@@ -167,19 +167,17 @@ class TesterTest extends \PHPUnit\Framework\TestCase
     {
         if (!class_exists(TestcaseSet::class)) {
             $this->markTestSkipped('Test set module is not installed');
-            return;
         }
         $set = TestcaseSet::parse(TestProfile::getYamlPath());
         if ($set->getInfo()['version'] != 1) {
             $this->markTestSkipped('Incompatible test set version');
-            return;
         }
         $runner = new TestRunner();
         $runner->setTestcases($set);
-        $runner->run(new Adapter\Ranvis(), [
+        $runner->run(new Adapter\Ranvis([
             'maxValueLength' => 2000,
             'maxWildcards' => 100000000,
-        ]);
+        ]));
         $status = $runner->getStatus();
         $this->assertgreaterThan(0, $status['num']['tests']);
         $this->assertSame(0, $status['num']['failures']);
