@@ -14,7 +14,7 @@ class FilterParser extends Parser
             'maxLines' => 1000,
             'keepTrailingSpaces' => false,
             'maxWildcards' => 10,
-            'escapedWildcard' => true, // default is true for safety for unknown tester may treats '%2A' as a wildcard '*'
+            'escapedWildcard' => true, // default is true for safety for unknown tester may treat '%2A' as a wildcard '*'
             'complementLeadingSlash' => true,
             'pathMemberRegEx' => '/^(?:Dis)?Allow$/i',
         ];

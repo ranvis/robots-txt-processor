@@ -20,7 +20,8 @@ class StringRecord extends Record
         return (string)$this->options['string'];
     }
 
-    public function getIterator(): \Traversable
+    #[\ReturnTypeWillChange]
+    public function getIterator()
     {
         throw new \LogicException('unimplemented');
     }
