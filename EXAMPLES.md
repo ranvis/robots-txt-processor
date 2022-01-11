@@ -5,7 +5,7 @@ These examples assume that Composer's autoloading is enabled and namespace `Ranv
 ```php
 use Ranvis\RobotsTxt;
 
-require_once(__DIR__ . '/vendor/autoload.php');
+require_once __DIR__ . '/vendor/autoload.php';
 ```
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
@@ -75,7 +75,7 @@ var_dump(iterator_to_array($record->getValueIterator('crawl-delay')));
 // }
 ```
 
-Here uses `iterator_to_array()` for an illustration purpose. You can of course pass it directly to `foreach`.
+Here applied `iterator_to_array()` to the iterator for an illustration purpose. You can of course pass it directly to `foreach`.
 
 ## Getting custom values tied to user-agent
 

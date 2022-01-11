@@ -36,11 +36,11 @@ The module can filter like:
 Also, it can for example:
 
 - Parse line continuation (LWS,) although not used widely
-- Identify misspelled "Useragent" directive
+- Identify misspelled `Useragent` directive
 - Complement missing leading slash in a path
 
-Tester module can process Allow/Disallow directives containing */$ meta characters.
-Alternatively, you can use the filter module alone and feed an output to another tester module as a single "User-agent: *" record with a non-group record (e.g. Sitemap.)
+Tester module can process Allow/Disallow directives containing `*`/`$` meta characters.
+Alternatively, you can use the filter module alone and feed an output to another tester module as a single `User-agent: *` record with a non-group record (e.g. Sitemap.)
 
 ## License
 
@@ -50,14 +50,14 @@ BSD 2-Clause License
 ## Installation
 
 `
-composer.phar require ranvis/robots-txt-processor:~1.0
+composer require "ranvis/robots-txt-processor:^1.0"
 `
 
 
 ## Example Usage
 
 ```php
-require_once(__DIR__ . '/vendor/autoload.php');
+require_once __DIR__ . '/vendor/autoload.php';
 
 $source = "User-agent: *\nDisallow: /path";
 $userAgents = 'MyBotIdentifier';
@@ -95,7 +95,7 @@ While `Tester->isAllowed()` accepts user-agents, it should run faster to filter 
 
 ### Record separator
 
-This parser ignores blank lines. Another record starts on User-agent lines after group member lines (i.e. Disallow/Allow.)
+This parser ignores blank lines. Another record starts on User-agent lines after group member lines (i.e. `Disallow`/`Allow`.)
 
 ### Case sensitivity
 
@@ -127,7 +127,7 @@ Normally, the default values should suffice to filter potentially offensive inpu
 
 - `'ignoreForbidden' => false,`
 
-  If true, `setResponseCode()` with `401` or `403` is treated as if no robots.txt existed, like Googlebot does, as opposed to robotstxt.org spec.
+  If true, `setResponseCode()` with `401 Unauthorized` or `403 Forbidden` is treated as if no robots.txt existed, like Googlebot does, as opposed to robotstxt.org spec.
 
 - `'escapedWildcard' => false,`
 
@@ -155,19 +155,19 @@ Normally, the default values should suffice to filter potentially offensive inpu
 
 - `'keepTrailingSpaces' => false,`
 
-  If false, trailing spaces (including tabs) of line without comment is trimmed. For lines with comment, spaces before # are always trimmed.
+  If false, trailing spaces (including tabs) of line without comment is trimmed. For lines with comment, spaces before `#` are always trimmed.
   Retaining spaces is the requirement of both robotstxt.org and Google specs.
 
 - `'maxWildcards' => 10,`
 
   Maximum number of non-repeated `*` in path to accept.
-  If a path contains more, rule itself will be ignored.
+  If a path contains more than this, the rule itself will be ignored.
 
 - `'escapedWildcard' => true,`
 
   If true, `%2A` in path line is treated as wildcard `*` and will be a subject to the limitation of `maxWildcards`.
-  When using an external tester, don't set to false unless you are sure that your tester doesn't treat `%2A` that way.
-  (listed as PeDecodeWildcard in [feature test table](https://github.com/ranvis/robots-txt-processor-test/wiki/Features))
+  When using an external tester, don't set to false unless you are sure that your tester doesn't treat `%2A` that way (and this tester does not,) so that rules cannot circumvent `maxWildcards` limitation.
+  (Testers listed as PeDecodeWildcard=yes in [feature test table](https://github.com/ranvis/robots-txt-processor-test/wiki/Features) should not change this flag.)
 
 - `'complementLeadingSlash' => true,`
 
@@ -188,6 +188,7 @@ Normally, the default values should suffice to filter potentially offensive inpu
 - `'maxDirectiveLength' => 32,`
 
   Maximum number of characters for the directive.
+  Any directives longer than this will be skipped.
   This must be at least 10 to parse `User-agent` directive.
   Increase if you need to keep custom long named directive value.
 
@@ -203,7 +204,7 @@ Normally, the default values should suffice to filter potentially offensive inpu
 
 - `'userAgentRegEx' => '/^User-?agent$/i',`
 
-  A directive matching this regex is treated as a User-agent.
+  A directive matching this regex is treated as a `User-agent` directive.
 
 
 ## Interface
